@@ -112,6 +112,7 @@ fun LibraryScreen(
             padding = padding,
             books = currentList,
             onBookClick = onBookClick,
+            onDeleteBook = { bookId -> viewModel.deleteBook(bookId) },
             emptyMessage = when (selectedTab) {
                 0 -> "No tienes libros pendientes por leer."
                 1 -> "No estás leyendo ningún libro actualmente."
@@ -126,6 +127,7 @@ fun LibraryContent(
     padding: PaddingValues,
     books: List<Book>,
     onBookClick: (String) -> Unit,
+    onDeleteBook: (String) -> Unit,
     emptyMessage: String
 ) {
     if (books.isEmpty()) {
@@ -154,7 +156,8 @@ fun LibraryContent(
                 BookCard(
                     book = book,
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { onBookClick(book.id) }
+                    onClick = { onBookClick(book.id) },
+                    onDeleteClick = { onDeleteBook(book.id) }
                 )
             }
         }
