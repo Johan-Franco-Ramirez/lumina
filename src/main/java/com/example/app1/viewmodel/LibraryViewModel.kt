@@ -57,4 +57,13 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             repository.savePersonalBook(newBook)
         }
     }
+
+    /**
+     * ELIMINAR LIBRO
+     */
+    fun deleteBook(bookId: String) {
+        viewModelScope.launch {
+            repository.deleteBookFromLibrary(bookId)
+        }
+    }
 }

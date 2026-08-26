@@ -35,6 +35,12 @@ interface LibraryDao {
     @Delete
     suspend fun removeFromLibrary(libraryBook: LibraryBookEntity)
 
+    @Query("DELETE FROM library WHERE bookId = :bookId")
+    suspend fun deleteLibraryEntry(bookId: String)
+
+    @Query("DELETE FROM books WHERE id = :bookId")
+    suspend fun deleteBookEntry(bookId: String)
+
     // --- Consultas Reactivas ---
 
     @Query("SELECT * FROM library")

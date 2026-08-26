@@ -1,1 +1,19 @@
-/build
+# Android Studio / IntelliJ
+.idea/
+.gradle/
+*.iml
+.artifacts/
+
+# Build folders
+build/
+*/build/
+
+# Local configuration
+local.properties
+
+# Log and heap dump files
+*.log
+*.hprof
+
+# Gradle Wrapper (optional to ignore, but usually kept. Here I'll keep it)
+#!gradle/wrapper/gradle-wrapper.jar

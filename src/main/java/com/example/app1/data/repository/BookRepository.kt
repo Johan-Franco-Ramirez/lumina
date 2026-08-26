@@ -247,6 +247,14 @@ class BookRepository(
         )
     }
 
+    /**
+     * Elimina un libro de la biblioteca y sus metadatos.
+     */
+    suspend fun deleteBookFromLibrary(bookId: String) {
+        libraryDao.deleteLibraryEntry(bookId)
+        libraryDao.deleteBookEntry(bookId)
+    }
+
     // --- UTILIDADES ---
 
     private fun translateMaturity(rating: String?): String {
