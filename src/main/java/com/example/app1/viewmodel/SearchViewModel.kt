@@ -8,7 +8,6 @@ import com.example.app1.data.database.LuminaDatabase
 import com.example.app1.data.repository.BookRepository
 import com.example.app1.domain.model.Book
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,28 +40,60 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private var searchJob: Job? = null
 
     /**
-     * Búsqueda dinámica con Debouncing
+     * Búsqueda con filtros avanzados
      */
-    fun onSearchQueryChanged(query: String, filter: String = "") {
+    fun performSearch(
+        query: String,
+        genre: String? = null,
+        ageRange: String? = null,
+        isIllustrated: Boolean = false
+    ) {
         searchJob?.cancel()
         
-        if (query.length < 3 && filter.isEmpty()) {
+        // Si no hay nada que buscar, volvemos a Idle
+        if (query.length < 3 && genre == null && ageRange == null && !isIllustrated) {
             _uiState.value = SearchUiState.Idle
             return
         }
 
         searchJob = viewModelScope.launch {
-            delay(500)
             _uiState.value = SearchUiState.Loading
             
             try {
-                val fullQuery = if (filter.isNotEmpty()) "$query subject:$filter" else query
+                // Construimos la query para la API
+                var fullQuery = if (query.isEmpty()) "libros" else query
+                
+                genre?.let {
+                    fullQuery += " subject:\"$it\""
+                }
+
+                // Obtenemos resultados base
                 val results = repository.searchBooks(fullQuery)
                 
-                if (results.isEmpty()) {
-                    _uiState.value = SearchUiState.Error("No se encontraron pergaminos con ese nombre.")
+                // Aplicamos filtrado manual para los campos que la API no filtra bien por query
+                var filteredResults = results
+
+                // Filtro de Edad (Simulado mapeando a targetAudience del modelo domain/Book)
+                ageRange?.let { range ->
+                    filteredResults = filteredResults.filter { book ->
+                        when (range) {
+                            "Adulto" -> book.targetAudience.contains("Adultos", ignoreCase = true)
+                            "Juvenil" -> book.targetAudience.contains("Juvenil", ignoreCase = true)
+                            "Prejuvenil" -> book.targetAudience.contains("Público General", ignoreCase = true)
+                            else -> true
+                        }
+                    }
+                }
+
+                // Filtro de libros ilustrados
+                if (isIllustrated) {
+                    filteredResults = filteredResults.filter { it.isIllustrated }
+                }
+                
+                if (filteredResults.isEmpty()) {
+                    _uiState.value = SearchUiState.Error("No se encontraron pergaminos con esos criterios.")
                 } else {
-                    _uiState.value = SearchUiState.Success(results)
+                    _uiState.value = SearchUiState.Success(filteredResults)
                 }
             } catch (_: Exception) {
                 _uiState.value = SearchUiState.Error("Error al consultar el catálogo remoto.")
