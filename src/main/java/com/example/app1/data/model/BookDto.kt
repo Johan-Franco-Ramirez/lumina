@@ -33,7 +33,9 @@ data class VolumeInfoDto(
     @SerializedName("categories") val categories: List<String>?,
     @SerializedName("imageLinks") val imageLinks: ImageLinksDto?,
     @SerializedName("averageRating") val averageRating: Double?,
-    @SerializedName("maturityRating") val maturityRating: String?
+    @SerializedName("maturityRating") val maturityRating: String?,
+    @SerializedName("previewLink") val previewLink: String?,
+    @SerializedName("infoLink") val infoLink: String?
 )
 
 data class ImageLinksDto(

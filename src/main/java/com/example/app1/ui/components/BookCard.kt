@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.HistoryEdu
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -55,25 +56,31 @@ fun BookCard(
                     contentScale = ContentScale.Crop
                 )
                 
-                // Badge: [🌐 Catálogo] o [📄 Personal]
+                // Badge: [🌐 Catálogo] o [📄 Personal] o [🏛️ Dominio Público]
                 Surface(
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                     shape = RoundedCornerShape(bottomStart = 8.dp),
                     modifier = Modifier.align(Alignment.TopEnd)
                 ) {
+                    val (icon, label) = when (book.origin) {
+                        BookOrigin.REMOTE -> Icons.Default.Language to "Catálogo"
+                        BookOrigin.PERSONAL_PDF -> Icons.Default.Description to "Personal"
+                        BookOrigin.GUTENDEX -> Icons.Default.HistoryEdu to "Dominio Público"
+                    }
+
                     Row(
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = if (book.origin == BookOrigin.REMOTE) Icons.Default.Language else Icons.Default.Description,
+                            imageVector = icon,
                             contentDescription = null,
                             modifier = Modifier.size(10.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (book.origin == BookOrigin.REMOTE) "Catálogo" else "Personal",
+                            text = label,
                             style = MaterialTheme.typography.labelSmall,
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold
@@ -118,7 +125,8 @@ fun BookCard(
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.primary, // Cambiado a primary para resaltar
+                    fontWeight = FontWeight.Medium
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))

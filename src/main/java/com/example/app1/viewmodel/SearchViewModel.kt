@@ -4,8 +4,10 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app1.data.api.GoogleBooksService
+import com.example.app1.data.api.GutendexClient
 import com.example.app1.data.database.LuminaDatabase
 import com.example.app1.data.repository.BookRepository
+import com.example.app1.data.repository.GutendexRepository
 import com.example.app1.domain.model.Book
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -34,6 +36,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         apiService = GoogleBooksService.create(),
         libraryDao = database.libraryDao(),
     )
+    private val gutendexRepository = GutendexRepository(GutendexClient.service)
 
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -57,12 +60,24 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             
             try {
                 val fullQuery = if (filter.isNotEmpty()) "$query subject:$filter" else query
-                val results = repository.searchBooks(fullQuery)
                 
-                if (results.isEmpty()) {
+                // Realizamos búsquedas en paralelo
+                val googleResults = repository.searchBooks(fullQuery)
+                
+                // Buscamos en Gutendex (priorizando español, luego global)
+                var gutendexResults = gutendexRepository.searchBooks(query, languages = "es")
+                if (gutendexResults.isEmpty()) {
+                    gutendexResults = gutendexRepository.searchBooks(query)
+                }
+                
+                // Combinamos y priorizamos (primero Google, luego Gutendex)
+                val combinedResults = (googleResults + gutendexResults)
+                    .distinctBy { "${it.title.lowercase()}_${it.author.lowercase()}" }
+                
+                if (combinedResults.isEmpty()) {
                     _uiState.value = SearchUiState.Error("No se encontraron pergaminos con ese nombre.")
                 } else {
-                    _uiState.value = SearchUiState.Success(results)
+                    _uiState.value = SearchUiState.Success(combinedResults)
                 }
             } catch (_: Exception) {
                 _uiState.value = SearchUiState.Error("Error al consultar el catálogo remoto.")

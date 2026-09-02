@@ -40,7 +40,8 @@ class BookRepository(
                 ageRange = "18+",
                 isIllustrated = false,
                 rating = 4.9,
-                origin = BookOrigin.REMOTE
+                origin = BookOrigin.REMOTE,
+                readUrl = "https://www.google.com/search?q=leer+cien+años+de+soledad+pdf"
             ),
             Book(
                 id = "static_4",
@@ -53,7 +54,8 @@ class BookRepository(
                 ageRange = "Todas las edades",
                 isIllustrated = true,
                 rating = 4.9,
-                origin = BookOrigin.REMOTE
+                origin = BookOrigin.REMOTE,
+                readUrl = "https://www.google.com/search?q=leer+el+principito+pdf"
             ),
             Book(
                 id = "static_5",
@@ -66,7 +68,8 @@ class BookRepository(
                 ageRange = "9+",
                 isIllustrated = true,
                 rating = 4.7,
-                origin = BookOrigin.REMOTE
+                origin = BookOrigin.REMOTE,
+                readUrl = "https://www.google.com/search?q=leer+alicia+en+el+pais+de+las+maravillas+pdf"
             ),
             Book(
                 id = "static_6",
@@ -79,7 +82,8 @@ class BookRepository(
                 ageRange = "16+",
                 isIllustrated = false,
                 rating = 4.8,
-                origin = BookOrigin.REMOTE
+                origin = BookOrigin.REMOTE,
+                readUrl = "https://www.google.com/search?q=leer+sapiens+harari+pdf"
             ),
             Book(
                 id = "static_7",
@@ -92,7 +96,8 @@ class BookRepository(
                 ageRange = "15+",
                 isIllustrated = false,
                 rating = 4.8,
-                origin = BookOrigin.REMOTE
+                origin = BookOrigin.REMOTE,
+                readUrl = "https://www.google.com/search?q=leer+breve+historia+del+tiempo+pdf"
             ),
             Book(
                 id = "static_8",
@@ -105,7 +110,8 @@ class BookRepository(
                 ageRange = "18+",
                 isIllustrated = false,
                 rating = 4.9,
-                origin = BookOrigin.REMOTE
+                origin = BookOrigin.REMOTE,
+                readUrl = "https://www.google.com/search?q=leer+meditaciones+marco+aurelio+pdf"
             ),
             Book(
                 id = "static_9",
@@ -118,7 +124,8 @@ class BookRepository(
                 ageRange = "12+",
                 isIllustrated = false,
                 rating = 4.6,
-                origin = BookOrigin.REMOTE
+                origin = BookOrigin.REMOTE,
+                readUrl = "https://www.google.com/search?q=leer+el+sabueso+de+los+baskerville+pdf"
             ),
             Book(
                 id = "static_10",
@@ -131,7 +138,8 @@ class BookRepository(
                 ageRange = "14+",
                 isIllustrated = true,
                 rating = 4.9,
-                origin = BookOrigin.REMOTE
+                origin = BookOrigin.REMOTE,
+                readUrl = "https://www.google.com/search?q=leer+la+historia+del+arte+gombrich+pdf"
             ),
             // Ejemplo de libro PDF Personal
             Book(
@@ -167,6 +175,7 @@ class BookRepository(
                     isIllustrated = dto.volumeInfo.description?.contains("illustrated", ignoreCase = true) ?: false,
                     rating = dto.volumeInfo.averageRating,
                     origin = BookOrigin.REMOTE,
+                    readUrl = dto.volumeInfo.previewLink ?: dto.volumeInfo.infoLink
                 )
             } ?: emptyList()
         } catch (_: Exception) {
@@ -189,6 +198,7 @@ class BookRepository(
                 isIllustrated = dto.volumeInfo.description?.contains("illustrated", ignoreCase = true) ?: false,
                 rating = dto.volumeInfo.averageRating,
                 origin = BookOrigin.REMOTE,
+                readUrl = dto.volumeInfo.previewLink ?: dto.volumeInfo.infoLink
             )
         } catch (_: Exception) {
             null
@@ -208,9 +218,10 @@ class BookRepository(
                     genres = dto.volumeInfo.categories ?: emptyList(),
                     targetAudience = translateMaturity(dto.volumeInfo.maturityRating),
                     ageRange = "No especificada",
-                    isIllustrated = false,
+                    isIllustrated = dto.volumeInfo.description?.contains("illustrated", ignoreCase = true) ?: false,
                     rating = dto.volumeInfo.averageRating,
                     origin = BookOrigin.REMOTE,
+                    readUrl = dto.volumeInfo.previewLink ?: dto.volumeInfo.infoLink
                 )
             } ?: emptyList()
         } catch (_: Exception) {
@@ -227,6 +238,13 @@ class BookRepository(
 
     suspend fun getBookLibraryStatus(bookId: String): ReadingStatus? {
         return libraryDao.getLibraryEntry(bookId)?.status
+    }
+
+    /**
+     * Obtiene un libro de la base de datos local por su ID.
+     */
+    suspend fun getLocalBookById(bookId: String): Book? {
+        return libraryDao.getBookById(bookId)?.toDomain()
     }
 
     fun getLibraryBooks(status: ReadingStatus): Flow<List<Book>> {
