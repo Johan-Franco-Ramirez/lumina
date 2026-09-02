@@ -81,10 +81,10 @@ fun FeaturedBook(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "by ${book.author}",
+                text = "Autor: ${book.author}",
                 style = MaterialTheme.typography.bodyLarge,
-                fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colorScheme.secondary
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(12.dp))
