@@ -4,9 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -25,6 +22,8 @@ import com.example.app1.viewmodel.HomeUiState
 
 /**
  * PANTALLA DE INICIO (Home.kt)
+ * 
+ * Se han eliminado los botones superiores de la TopAppBar para una interfaz más limpia.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,14 +45,6 @@ fun HomeScreen(
                             letterSpacing = 4.sp
                         )
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {}) { Icon(Icons.Default.Person, contentDescription = null) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background

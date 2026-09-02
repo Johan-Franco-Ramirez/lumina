@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,16 +21,8 @@ import com.example.app1.viewmodel.SearchViewModel
 
 /**
  * PANTALLA DE BÚSQUEDA (SearchScreen)
- * 
- * ¿Qué es?
- * El motor de exploración de LUMINA.
- * 
- * ¿Para qué sirve?
- * Permite buscar libros reales en Google Books mediante texto o categorías.
- * 
- * Conceptos:
- * 1. Debouncing: Implementado en el ViewModel para no saturar la API.
- * 2. FilterChips: Para filtrar rápidamente por géneros populares.
+ *
+ * Actualizada con filtros por categorías: Género, Edad e Ilustraciones.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,10 +31,18 @@ fun SearchScreen(
     viewModel: SearchViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    // Estado local de los filtros
     var query by remember { mutableStateOf("") }
-    var selectedGenre by remember { mutableStateOf("") }
+    var selectedGenre by remember { mutableStateOf<String?>(null) }
+    var selectedAgeRange by remember { mutableStateOf<String?>(null) }
+    var isIllustrated by remember { mutableStateOf(false) }
 
-    val genres = listOf("Fiction", "History", "Philosophy", "Art", "Science", "Mystery")
+    val genres = listOf(
+        "Fantasía", "Ciencia ficción", "Aventura", "Misterio", 
+        "Terror", "Romance", "Drama", "Historia", "Educación", "Infantil"
+    )
+    val ageRanges = listOf("Prejuvenil", "Juvenil", "Adulto")
 
     Scaffold(
         topBar = {
@@ -53,108 +54,139 @@ fun SearchScreen(
             )
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // --- BARRA DE BÚSQUEDA ---
-            OutlinedTextField(
-                value = query,
-                onValueChange = { 
-                    query = it
-                    viewModel.onSearchQueryChanged(it, selectedGenre)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Título, autor o palabra clave...") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                shape = MaterialTheme.shapes.medium,
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.secondary
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // --- FILTROS DE GÉNERO ---
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 8.dp)
-            ) {
-                items(genres) { genre ->
-                    FilterChip(
-                        selected = selectedGenre == genre,
-                        onClick = {
-                            selectedGenre = if (selectedGenre == genre) "" else genre
-                            viewModel.onSearchQueryChanged(query, selectedGenre)
-                        },
-                        label = { Text(genre) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                        )
+            item {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Título, autor o palabra clave...") },
+                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    shape = MaterialTheme.shapes.medium,
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.secondary
                     )
+                )
+            }
+
+            // --- SECCIÓN DE FILTROS ---
+            item {
+                Text(
+                    text = "Categoría: Género",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(genres) { genre ->
+                        FilterChip(
+                            selected = selectedGenre == genre,
+                            onClick = { selectedGenre = if (selectedGenre == genre) null else genre },
+                            label = { Text(genre) }
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            item {
+                Text(
+                    text = "Rango de edad",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(ageRanges) { range ->
+                        FilterChip(
+                            selected = selectedAgeRange == range,
+                            onClick = { selectedAgeRange = if (selectedAgeRange == range) null else range },
+                            label = { Text(range) }
+                        )
+                    }
+                }
+            }
+
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = isIllustrated,
+                        onCheckedChange = { isIllustrated = it }
+                    )
+                    Text("Solo libros ilustrados", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            // --- BOTÓN APLICAR ---
+            item {
+                Button(
+                    onClick = { 
+                        viewModel.performSearch(query, selectedGenre, selectedAgeRange, isIllustrated)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Icon(Icons.Default.FilterList, null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("APLICAR FILTROS Y BUSCAR")
+                }
+            }
 
             // --- RESULTADOS ---
+            item {
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+
             when (val state = uiState) {
                 is SearchUiState.Idle -> {
-                    SearchInfoMessage(
-                        title = "Biblioteca de Alejandría",
-                        message = "Escribe al menos 3 letras para comenzar la búsqueda en el catálogo global."
-                    )
+                    item {
+                        SearchInfoMessage(
+                            title = "Busca tu próximo libro",
+                            message = "Utiliza la barra de búsqueda y los filtros para explorar nuestra biblioteca."
+                        )
+                    }
                 }
                 is SearchUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
                     }
                 }
                 is SearchUiState.Error -> {
-                    SearchInfoMessage(
-                        title = "Aviso",
-                        message = state.message
-                    )
+                    item {
+                        SearchInfoMessage(title = "Aviso", message = state.message)
+                    }
                 }
                 is SearchUiState.Success -> {
-                    SearchResultsList(
-                        books = state.results,
-                        onBookClick = onBookClick
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SearchResultsList(books: List<Book>, onBookClick: (String) -> Unit) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(vertical = 16.dp)
-    ) {
-        // Mostramos resultados de 2 en 2 para mantener el estilo visual
-        val chunks = books.chunked(2)
-        items(chunks) { rowBooks ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                rowBooks.forEach { book ->
-                    BookCard(
-                        book = book,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onBookClick(book.id) }
-                    )
-                }
-                // Si la fila tiene solo un libro, añadimos un spacer para que no se estire
-                if (rowBooks.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
+                    // Mostramos resultados de 2 en 2
+                    val chunks = state.results.chunked(2)
+                    items(chunks) { rowBooks ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            rowBooks.forEach { book ->
+                                BookCard(
+                                    book = book,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { onBookClick(book.id) }
+                                )
+                            }
+                            if (rowBooks.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }
@@ -164,15 +196,15 @@ fun SearchResultsList(books: List<Book>, onBookClick: (String) -> Unit) {
 @Composable
 fun SearchInfoMessage(title: String, message: String) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+        Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = message,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.padding(horizontal = 32.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
