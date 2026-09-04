@@ -44,7 +44,65 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private var searchJob: Job? = null
 
     /**
-     * Búsqueda dinámica con Debouncing
+     * Búsqueda manual con filtros aplicados
+     */
+    fun performSearch(query: String, genre: String?, ageRange: String?, isIllustrated: Boolean) {
+        searchJob?.cancel()
+        
+        if (query.isEmpty() && genre == null && ageRange == null && !isIllustrated) {
+            _uiState.value = SearchUiState.Idle
+            return
+        }
+
+        searchJob = viewModelScope.launch {
+            _uiState.value = SearchUiState.Loading
+            
+            try {
+                // Construir query para APIs (Google Books permite filtrar por subject)
+                val apiQuery = if (!genre.isNullOrEmpty()) "$query subject:$genre" else query
+                
+                // 1. Google Books
+                val googleResults = repository.searchBooks(apiQuery)
+                
+                // 2. Gutendex (priorizando español si hay query)
+                var gutendexResults = if (query.isNotEmpty()) {
+                    val esResults = gutendexRepository.searchBooks(query, languages = "es")
+                    if (esResults.isEmpty()) gutendexRepository.searchBooks(query) else esResults
+                } else if (!genre.isNullOrEmpty()) {
+                    gutendexRepository.searchBooks(genre)
+                } else {
+                    emptyList()
+                }
+                
+                // 3. Combinar resultados únicos
+                var results = (googleResults + gutendexResults)
+                    .distinctBy { "${it.title.lowercase()}_${it.author.lowercase()}" }
+
+                // 4. Filtros locales (Edad e Ilustraciones)
+                if (!ageRange.isNullOrEmpty()) {
+                    results = results.filter { 
+                        it.targetAudience.contains(ageRange, ignoreCase = true) || 
+                        it.ageRange.contains(ageRange, ignoreCase = true)
+                    }
+                }
+                
+                if (isIllustrated) {
+                    results = results.filter { it.isIllustrated }
+                }
+
+                if (results.isEmpty()) {
+                    _uiState.value = SearchUiState.Error("No se encontraron pergaminos con esos criterios.")
+                } else {
+                    _uiState.value = SearchUiState.Success(results)
+                }
+            } catch (e: Exception) {
+                _uiState.value = SearchUiState.Error("Error al consultar el catálogo remoto.")
+            }
+        }
+    }
+
+    /**
+     * Búsqueda dinámica con Debouncing (opcional, para uso futuro)
      */
     fun onSearchQueryChanged(query: String, filter: String = "") {
         searchJob?.cancel()
@@ -56,32 +114,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
         searchJob = viewModelScope.launch {
             delay(500)
-            _uiState.value = SearchUiState.Loading
-            
-            try {
-                val fullQuery = if (filter.isNotEmpty()) "$query subject:$filter" else query
-                
-                // Realizamos búsquedas en paralelo
-                val googleResults = repository.searchBooks(fullQuery)
-                
-                // Buscamos en Gutendex (priorizando español, luego global)
-                var gutendexResults = gutendexRepository.searchBooks(query, languages = "es")
-                if (gutendexResults.isEmpty()) {
-                    gutendexResults = gutendexRepository.searchBooks(query)
-                }
-                
-                // Combinamos y priorizamos (primero Google, luego Gutendex)
-                val combinedResults = (googleResults + gutendexResults)
-                    .distinctBy { "${it.title.lowercase()}_${it.author.lowercase()}" }
-                
-                if (combinedResults.isEmpty()) {
-                    _uiState.value = SearchUiState.Error("No se encontraron pergaminos con ese nombre.")
-                } else {
-                    _uiState.value = SearchUiState.Success(combinedResults)
-                }
-            } catch (_: Exception) {
-                _uiState.value = SearchUiState.Error("Error al consultar el catálogo remoto.")
-            }
+            performSearch(query, if (filter.isNotEmpty()) filter else null, null, false)
         }
     }
 }

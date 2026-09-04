@@ -13,7 +13,7 @@ import com.example.app1.domain.model.BookOrigin
  * 
  * ¿Para qué sirve?
  * Almacena de forma permanente los datos de los libros que el usuario 
- * ha consultado o guardado, evitando depender siempre de Internet.
+ * ha consultado o guardado, incluyendo metadatos de archivos PDF locales.
  */
 @Entity(tableName = "books")
 data class BookEntity(
@@ -24,9 +24,12 @@ data class BookEntity(
     val coverUrl: String?,
     val genres: List<String>,
     val targetAudience: String,
+    val ageRange: String,
     val isIllustrated: Boolean,
     val rating: Double?,
-    val origin: BookOrigin
+    val origin: BookOrigin,
+    val pdfUri: String? = null,
+    val readUrl: String? = null
 )
 
 /**
@@ -40,10 +43,12 @@ fun BookEntity.toDomain() = Book(
     coverUrl = coverUrl,
     genres = genres,
     targetAudience = targetAudience,
-    ageRange = "No especificada",
+    ageRange = ageRange,
     isIllustrated = isIllustrated,
     rating = rating,
-    origin = origin
+    origin = origin,
+    pdfUri = pdfUri,
+    readUrl = readUrl
 )
 
 /**
@@ -57,7 +62,10 @@ fun Book.toEntity() = BookEntity(
     coverUrl = coverUrl,
     genres = genres,
     targetAudience = targetAudience,
+    ageRange = ageRange,
     isIllustrated = isIllustrated,
     rating = rating,
-    origin = origin
+    origin = origin,
+    pdfUri = pdfUri,
+    readUrl = readUrl
 )
