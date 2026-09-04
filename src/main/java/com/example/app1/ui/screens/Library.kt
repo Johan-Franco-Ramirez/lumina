@@ -14,12 +14,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.app1.domain.model.Book
+import com.example.app1.domain.model.BookSource
+import com.example.app1.domain.model.ReaderMode
 import com.example.app1.ui.components.BookCard
 import com.example.app1.ui.components.ImportBookDialog
 import com.example.app1.viewmodel.LibraryViewModel
+import com.example.app1.viewmodel.ReaderViewModel
 
 /**
  * PANTALLA: MI BIBLIOTECA (LibraryScreen)
@@ -28,10 +32,12 @@ import com.example.app1.viewmodel.LibraryViewModel
 @Composable
 fun LibraryScreen(
     onBookClick: (String) -> Unit,
-    viewModel: LibraryViewModel = viewModel()
+    onNavigateToReader: () -> Unit,
+    viewModel: LibraryViewModel = viewModel(),
+    readerViewModel: ReaderViewModel = viewModel(),
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("POR LEER", "LEYENDO", "LEÍDOS")
+    val tabs = listOf("POR LEER", "LEYENDO", "LEÍDOS", "LOCAL")
 
     val wantToRead by viewModel.wantToReadBooks.collectAsState(initial = emptyList())
     val reading by viewModel.readingBooks.collectAsState(initial = emptyList())
@@ -102,22 +108,80 @@ fun LibraryScreen(
             }
         }
     ) { padding ->
-        val currentList = when (selectedTab) {
-            0 -> wantToRead
-            1 -> reading
-            else -> read
-        }
-
-        LibraryContent(
-            padding = padding,
-            books = currentList,
-            onBookClick = onBookClick,
-            emptyMessage = when (selectedTab) {
-                0 -> "No tienes libros pendientes por leer."
-                1 -> "No estás leyendo ningún libro actualmente."
-                else -> "Aún no has marcado ningún libro como leído."
+        when (selectedTab) {
+            3 -> {
+                // Pestaña LOCAL: Funcionalidad solicitada por el usuario
+                LocalReaderSection(
+                    padding = padding,
+                    readerViewModel = readerViewModel,
+                    onNavigateToReader = onNavigateToReader
+                )
             }
-        )
+            else -> {
+                val currentList = when (selectedTab) {
+                    0 -> wantToRead
+                    1 -> reading
+                    else -> read
+                }
+
+                LibraryContent(
+                    padding = padding,
+                    books = currentList,
+                    onBookClick = onBookClick,
+                    emptyMessage = when (selectedTab) {
+                        0 -> "No tienes libros pendientes por leer."
+                        1 -> "No estás leyendo ningún libro actualmente."
+                        else -> "Aún no has marcado ningún libro como leído."
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LocalReaderSection(
+    padding: PaddingValues,
+    readerViewModel: ReaderViewModel,
+    onNavigateToReader: () -> Unit
+) {
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri: Uri? ->
+            uri?.let { safeUri ->
+                // Detectamos el modo inicial de forma básica según la extensión
+                val fileName = safeUri.toString().lowercase()
+                val initialMode = if (fileName.contains(".pdf")) ReaderMode.PDF else ReaderMode.ComicLTR
+                
+                // Le ordenamos al ViewModel procesar el archivo subido
+                readerViewModel.loadBook(source = BookSource.Local(safeUri), initialMode = initialMode)
+                
+                // Navegamos al lector para ver el progreso/resultado
+                onNavigateToReader()
+            }
+        }
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "Carga un archivo desde tu dispositivo para leerlo al instante.",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 16.dp),
+                textAlign = TextAlign.Center
+            )
+            Button(onClick = { 
+                // Filtramos para aceptar exclusivamente PDFs y archivos ZIP/CBZ
+                filePickerLauncher.launch(arrayOf("application/pdf", "application/zip", "application/x-cbz"))
+            }) {
+                Text("Subir y Leer Archivo Local")
+            }
+        }
     }
 }
 

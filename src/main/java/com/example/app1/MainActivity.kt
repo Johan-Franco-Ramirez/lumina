@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -22,8 +23,11 @@ import com.example.app1.ui.screens.BookDetailScreen
 import com.example.app1.ui.screens.HomeScreen
 import com.example.app1.ui.screens.LibraryScreen
 import com.example.app1.ui.screens.ProfileScreen
+import com.example.app1.ui.screens.ReaderScreen
 import com.example.app1.ui.screens.SearchScreen
 import com.example.app1.ui.theme.App1Theme
+import com.example.app1.viewmodel.ReaderViewModel
+import com.example.app1.viewmodel.ReaderViewModelFactory
 import com.example.app1.viewmodel.SettingsViewModel
 
 /**
@@ -52,6 +56,12 @@ class MainActivity : ComponentActivity() {
 fun LuminaApp(settingsViewModel: SettingsViewModel) {
     val navController = rememberNavController()
     val isDarkTheme by settingsViewModel.isDarkTheme.collectAsState()
+    val context = LocalContext.current
+
+    // Inicializamos el ReaderViewModel con su Factory
+    val readerViewModel: ReaderViewModel = viewModel(
+        factory = ReaderViewModelFactory(context)
+    )
 
     Scaffold(
         bottomBar = { LuminaBottomBar(navController) },
@@ -72,15 +82,28 @@ fun LuminaApp(settingsViewModel: SettingsViewModel) {
                 })
             }
             composable(Screen.Library.route) { 
-                LibraryScreen(onBookClick = { bookId -> 
-                    navController.navigate(Screen.BookDetail.createRoute(bookId))
-                }) 
+                LibraryScreen(
+                    onBookClick = { bookId -> 
+                        navController.navigate(Screen.BookDetail.createRoute(bookId))
+                    },
+                    onNavigateToReader = {
+                        navController.navigate(Screen.Reader.route)
+                    },
+                    readerViewModel = readerViewModel
+                ) 
             }
             composable(Screen.Profile.route) { 
                 ProfileScreen(
                     onToggleTheme = { settingsViewModel.toggleTheme() },
                     isDarkTheme = isDarkTheme
                 ) 
+            }
+            
+            composable(Screen.Reader.route) {
+                ReaderScreen(
+                    viewModel = readerViewModel,
+                    onBack = { navController.popBackStack() }
+                )
             }
             
             composable(
