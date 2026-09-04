@@ -3,85 +3,79 @@ package com.example.app1.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app1.data.api.GoogleBooksService
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import com.example.app1.data.api.OpenLibraryService
 import com.example.app1.data.api.GutendexClient
-import com.example.app1.data.database.LuminaDatabase
-import com.example.app1.data.repository.BookRepository
-import com.example.app1.data.repository.GutendexRepository
+import com.example.app1.data.paging.CombinedBooksPagingSource
 import com.example.app1.domain.model.Book
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-
-/**
- * ESTADO DE LA BÚSQUEDA (SearchUiState)
- */
-sealed class SearchUiState {
-    object Idle : SearchUiState()
-    object Loading : SearchUiState()
-    data class Success(val results: List<Book>) : SearchUiState()
-    data class Error(val message: String) : SearchUiState()
-}
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * SEARCH VIEWMODEL
  */
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val database = LuminaDatabase.getDatabase(application)
-    private val repository = BookRepository(
-        apiService = GoogleBooksService.create(),
-        libraryDao = database.libraryDao(),
-    )
-    private val gutendexRepository = GutendexRepository(GutendexClient.service)
+    private val openLibraryService = OpenLibraryService.create()
+    private val gutendexService = GutendexClient.service
+    
+    private val _searchQuery = MutableStateFlow("")
+    private val _selectedFilter = MutableStateFlow("")
+    private val _selectedAgeRange = MutableStateFlow<String?>(null)
+    private val _isIllustrated = MutableStateFlow(value = false)
 
-    private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
-    val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
+    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+    val pagingDataFlow: Flow<PagingData<Book>> = _searchQuery
+        .debounce(600.milliseconds) // Esperamos 600ms antes de disparar la búsqueda
+        .flatMapLatest { query ->
+            val genre = _selectedFilter.value
+            val age = _selectedAgeRange.value
+            val illustrated = _isIllustrated.value
+            
+            if (query.length < 3 && genre.isEmpty()) {
+                MutableStateFlow(PagingData.empty())
+            } else {
+                searchBooksPaginated(query, genre, age, illustrated)
+            }
+        }.cachedIn(viewModelScope)
 
-    private var searchJob: Job? = null
+    private fun searchBooksPaginated(
+        query: String, 
+        genre: String, 
+        age: String?, 
+        illustrated: Boolean
+    ): Flow<PagingData<Book>> = Pager(
+        config = PagingConfig(
+            pageSize = 20,
+            enablePlaceholders = false,
+            initialLoadSize = 20
+        ),
+        pagingSourceFactory = { 
+            val combinedFilter = buildString {
+                if (genre.isNotEmpty()) append("$genre ")
+                age?.let { append("$it ") }
+                if (illustrated) append("illustrated")
+            }.trim()
+            
+            CombinedBooksPagingSource(openLibraryService, gutendexService, query, combinedFilter) 
+        }
+    ).flow
 
     /**
-     * Búsqueda dinámica con Debouncing
+     * Activa la búsqueda con los filtros aplicados
      */
-    fun onSearchQueryChanged(query: String, filter: String = "") {
-        searchJob?.cancel()
-        
-        if (query.length < 3 && filter.isEmpty()) {
-            _uiState.value = SearchUiState.Idle
-            return
-        }
-
-        searchJob = viewModelScope.launch {
-            delay(500)
-            _uiState.value = SearchUiState.Loading
-            
-            try {
-                val fullQuery = if (filter.isNotEmpty()) "$query subject:$filter" else query
-                
-                // Realizamos búsquedas en paralelo
-                val googleResults = repository.searchBooks(fullQuery)
-                
-                // Buscamos en Gutendex (priorizando español, luego global)
-                var gutendexResults = gutendexRepository.searchBooks(query, languages = "es")
-                if (gutendexResults.isEmpty()) {
-                    gutendexResults = gutendexRepository.searchBooks(query)
-                }
-                
-                // Combinamos y priorizamos (primero Google, luego Gutendex)
-                val combinedResults = (googleResults + gutendexResults)
-                    .distinctBy { "${it.title.lowercase()}_${it.author.lowercase()}" }
-                
-                if (combinedResults.isEmpty()) {
-                    _uiState.value = SearchUiState.Error("No se encontraron pergaminos con ese nombre.")
-                } else {
-                    _uiState.value = SearchUiState.Success(combinedResults)
-                }
-            } catch (_: Exception) {
-                _uiState.value = SearchUiState.Error("Error al consultar el catálogo remoto.")
-            }
-        }
+    fun performSearch(query: String, genre: String?, age: String?, illustrated: Boolean) {
+        _selectedFilter.value = genre ?: ""
+        _selectedAgeRange.value = age
+        _isIllustrated.value = illustrated
+        _searchQuery.value = query
     }
 }
