@@ -70,6 +70,8 @@ fun HomeScreen(
                     trendingBooks = state.trendingBooks,
                     continueReading = state.continueReading,
                     freeClassics = state.freeClassics,
+                    mysteryBooks = state.mysteryBooks,
+                    adventureBooks = state.adventureBooks,
                     onBookClick = onBookClick
                 )
             }
@@ -84,6 +86,8 @@ fun HomeContent(
     trendingBooks: List<Book>,
     continueReading: List<Book>,
     freeClassics: List<Book>,
+    mysteryBooks: List<Book>,
+    adventureBooks: List<Book>,
     onBookClick: (String) -> Unit
 ) {
     LazyColumn(
@@ -134,6 +138,36 @@ fun HomeContent(
             ) {
                 items(trendingBooks) { book ->
                     BookCard(book = book, onClick = { onBookClick(book.id) })
+                }
+            }
+        }
+
+        // --- SECCIÓN: MISTERIO ---
+        if (mysteryBooks.isNotEmpty()) {
+            item {
+                SectionHeader(title = "Misterio y Suspenso")
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(mysteryBooks) { book ->
+                        BookCard(book = book, onClick = { onBookClick(book.id) })
+                    }
+                }
+            }
+        }
+
+        // --- SECCIÓN: AVENTURA ---
+        if (adventureBooks.isNotEmpty()) {
+            item {
+                SectionHeader(title = "Grandes Aventuras")
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(adventureBooks) { book ->
+                        BookCard(book = book, onClick = { onBookClick(book.id) })
+                    }
                 }
             }
         }

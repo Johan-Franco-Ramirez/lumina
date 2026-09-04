@@ -2,8 +2,13 @@ package com.example.app1.data.repository
 
 import com.example.app1.data.api.GutendexService
 import com.example.app1.data.model.GutendexBook
+import com.example.app1.data.paging.GutendexPagingSource
 import com.example.app1.domain.model.Book
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 /**
@@ -47,5 +52,15 @@ class GutendexRepository(private val service: GutendexService) {
         } catch (e: Exception) {
             null
         }
+    }
+
+    /**
+     * Búsqueda paginada en Gutendex
+     */
+    fun searchBooksPaging(query: String, languages: String? = null): Flow<PagingData<Book>> {
+        return Pager(
+            config = PagingConfig(pageSize = 32, enablePlaceholders = false),
+            pagingSourceFactory = { GutendexPagingSource(service, query, languages) }
+        ).flow
     }
 }
