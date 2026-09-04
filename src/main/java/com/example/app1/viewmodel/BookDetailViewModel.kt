@@ -3,14 +3,13 @@ package com.example.app1.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app1.data.api.GoogleBooksService
+import com.example.app1.data.api.OpenLibraryService
 import com.example.app1.data.api.GutendexClient
 import com.example.app1.data.database.LuminaDatabase
 import com.example.app1.data.database.ReadingStatus
 import com.example.app1.data.repository.BookRepository
 import com.example.app1.data.repository.GutendexRepository
 import com.example.app1.domain.model.Book
-import com.example.app1.domain.model.BookOrigin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,7 +33,7 @@ sealed class BookDetailUiState {
 class BookDetailViewModel(application: Application) : AndroidViewModel(application) {
     private val database = LuminaDatabase.getDatabase(application)
     private val repository = BookRepository(
-        apiService = GoogleBooksService.create(),
+        apiService = OpenLibraryService.create(),
         libraryDao = database.libraryDao()
     )
     private val gutendexRepository = GutendexRepository(GutendexClient.service)
@@ -50,9 +49,7 @@ class BookDetailViewModel(application: Application) : AndroidViewModel(applicati
             var book: Book? = if (bookId.startsWith("GUTEN_")) {
                 val idStr = bookId.removePrefix("GUTEN_")
                 val gutenId = idStr.toIntOrNull()
-                if (gutenId != null) {
-                    gutendexRepository.getBookById(gutenId)
-                } else null
+                gutenId?.let { gutendexRepository.getBookById(it) }
             } else null
 
             // 2. Si no es de Gutendex o no se encontró, buscar en la DB local (PDFs o guardados)
@@ -65,7 +62,7 @@ class BookDetailViewModel(application: Application) : AndroidViewModel(applicati
                 book = repository.getRecommendedBooks().find { it.id == bookId }
             }
 
-            // 4. Por último, intentar buscar en la API de Google Books
+            // 4. Por último, intentar buscar en la API de Open Library
             if (book == null && !bookId.startsWith("GUTEN_")) {
                 book = repository.getBookById(bookId)
             }

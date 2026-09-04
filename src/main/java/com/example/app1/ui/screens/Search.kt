@@ -14,9 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.app1.domain.model.Book
 import com.example.app1.ui.components.BookCard
-import com.example.app1.viewmodel.SearchUiState
 import com.example.app1.viewmodel.SearchViewModel
 
 /**
@@ -30,7 +31,7 @@ fun SearchScreen(
     onBookClick: (String) -> Unit,
     viewModel: SearchViewModel = viewModel(),
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val pagingItems = viewModel.pagingDataFlow.collectAsLazyPagingItems()
     
     // Estado local de los filtros
     var query by remember { mutableStateOf("") }
@@ -145,47 +146,68 @@ fun SearchScreen(
                 Divider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
-            when (val state = uiState) {
-                is SearchUiState.Idle -> {
-                    item {
-                        SearchInfoMessage(
-                            title = "Busca tu próximo libro",
-                            message = "Utiliza la barra de búsqueda y los filtros para explorar nuestra biblioteca."
-                        )
-                    }
+            if (pagingItems.itemCount == 0 && pagingItems.loadState.refresh !is LoadState.Loading) {
+                item {
+                    SearchInfoMessage(
+                        title = "Busca tu próximo libro",
+                        message = "Utiliza la barra de búsqueda y los filtros para explorar nuestra biblioteca."
+                    )
                 }
-                is SearchUiState.Loading -> {
-                    item {
-                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                }
-                is SearchUiState.Error -> {
-                    item {
-                        SearchInfoMessage(title = "Aviso", message = state.message)
-                    }
-                }
-                is SearchUiState.Success -> {
-                    // Mostramos resultados de 2 en 2
-                    val chunks = state.results.chunked(2)
-                    items(chunks) { rowBooks ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            rowBooks.forEach { book ->
-                                BookCard(
-                                    book = book,
-                                    modifier = Modifier.weight(1f),
-                                    onClick = { onBookClick(book.id) }
-                                )
-                            }
-                            if (rowBooks.size == 1) {
-                                Spacer(modifier = Modifier.weight(1f))
+            } else {
+                when (pagingItems.loadState.refresh) {
+                    is LoadState.Loading -> {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
                             }
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    is LoadState.Error -> {
+                        item {
+                            SearchInfoMessage(title = "Aviso", message = "Error al cargar resultados.")
+                        }
+                    }
+                    else -> {
+                        // Mostramos resultados de 2 en 2
+                        val count = pagingItems.itemCount
+                        for (i in 0 until count step 2) {
+                            item(key = pagingItems[i]?.id ?: i) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    val item1 = pagingItems[i]
+                                    val item2 = if (i + 1 < count) pagingItems[i + 1] else null
+
+                                    if (item1 != null) {
+                                        BookCard(
+                                            book = item1,
+                                            modifier = Modifier.weight(1f),
+                                            onClick = { onBookClick(item1.id) }
+                                        )
+                                    }
+                                    if (item2 != null) {
+                                        BookCard(
+                                            book = item2,
+                                            modifier = Modifier.weight(1f),
+                                            onClick = { onBookClick(item2.id) }
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+                        }
+
+                        // Indicador de carga al final
+                        if (pagingItems.loadState.append is LoadState.Loading) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                                }
+                            }
+                        }
                     }
                 }
             }

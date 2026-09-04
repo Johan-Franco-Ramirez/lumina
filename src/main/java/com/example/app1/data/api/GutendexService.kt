@@ -19,7 +19,8 @@ interface GutendexService {
      */
     @GET("books/")
     suspend fun getSpanishBooks(
-        @Query("languages") language: String = "es"
+        @Query("languages") language: String = "es",
+        @Query("page") page: Int = 1
     ): GutendexResponse
 
     /**
@@ -28,7 +29,8 @@ interface GutendexService {
     @GET("books/")
     suspend fun searchBooks(
         @Query("search") query: String,
-        @Query("languages") languages: String? = null
+        @Query("languages") languages: String? = null,
+        @Query("page") page: Int = 1
     ): GutendexResponse
 
     /**
