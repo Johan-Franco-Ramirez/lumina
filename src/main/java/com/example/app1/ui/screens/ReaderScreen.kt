@@ -15,8 +15,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.app1.domain.model.ReaderMode
 import com.example.app1.viewmodel.ReaderViewModel
+
+@Preview
+@Composable
+fun ReaderScreenPreview() {
+    // Nota: El ViewModel real necesita un repositorio, así que esto es solo descriptivo
+    // En una app real usaríamos un MockViewModel o CompositionLocal
+    Surface(color = Color.Black) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Vista Previa del Lector", color = Color.White)
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,11 +67,9 @@ fun ReaderScreen(
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             } else if (uiState.pages.isNotEmpty()) {
                 val pagerState = rememberPagerState(
-                    initialPage = uiState.currentPageIndex,
-                    pageCount = { uiState.pages.size }
-                )
+                    initialPage = uiState.currentPageIndex
+                ) { uiState.pages.size }
 
-                // Sincronizar el estado del pager con el ViewModel (opcional, para guardar progreso)
                 LaunchedEffect(pagerState.currentPage) {
                     viewModel.updateCurrentPage(pagerState.currentPage)
                 }
@@ -79,7 +90,6 @@ fun ReaderScreen(
                         }
                     }
                     else -> {
-                        // PDF, MangaRTL, ComicLTR usan HorizontalPager por ahora
                         HorizontalPager(
                             state = pagerState,
                             modifier = Modifier.fillMaxSize(),

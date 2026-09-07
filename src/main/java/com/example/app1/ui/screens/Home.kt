@@ -4,9 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -25,6 +22,8 @@ import com.example.app1.viewmodel.HomeUiState
 
 /**
  * PANTALLA DE INICIO (Home.kt)
+ * 
+ * Se han eliminado los botones superiores de la TopAppBar para una interfaz más limpia.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,14 +45,6 @@ fun HomeScreen(
                             letterSpacing = 4.sp
                         )
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {}) { Icon(Icons.Default.Person, contentDescription = null) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
@@ -77,6 +68,10 @@ fun HomeScreen(
                     padding = padding,
                     featuredBook = state.featuredBook,
                     trendingBooks = state.trendingBooks,
+                    continueReading = state.continueReading,
+                    freeClassics = state.freeClassics,
+                    mysteryBooks = state.mysteryBooks,
+                    adventureBooks = state.adventureBooks,
                     onBookClick = onBookClick
                 )
             }
@@ -89,6 +84,10 @@ fun HomeContent(
     padding: PaddingValues,
     featuredBook: Book?,
     trendingBooks: List<Book>,
+    continueReading: List<Book>,
+    freeClassics: List<Book>,
+    mysteryBooks: List<Book>,
+    adventureBooks: List<Book>,
     onBookClick: (String) -> Unit
 ) {
     LazyColumn(
@@ -99,11 +98,26 @@ fun HomeContent(
     ) {
         item {
             Text(
-                text = "Discover",
+                text = "Para ti",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(vertical = 16.dp)
             )
+        }
+
+        // --- SECCIÓN: CONTINÚA LEYENDO ---
+        if (continueReading.isNotEmpty()) {
+            item {
+                SectionHeader(title = "Continúa leyendo")
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(continueReading) { book ->
+                        BookCard(book = book, onClick = { onBookClick(book.id) })
+                    }
+                }
+            }
         }
 
         featuredBook?.let { book ->
@@ -115,35 +129,77 @@ fun HomeContent(
             }
         }
 
+        // --- SECCIÓN: TENDENCIAS ---
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Trending Now",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                TextButton(onClick = {}) {
-                    Text("SEE ALL", style = MaterialTheme.typography.labelLarge)
-                }
-            }
-        }
-
-        item {
+            SectionHeader(title = "Tendencias ahora")
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(trendingBooks) { book ->
-                    BookCard(
-                        book = book,
-                        onClick = { onBookClick(book.id) }
-                    )
+                    BookCard(book = book, onClick = { onBookClick(book.id) })
                 }
             }
         }
+
+        // --- SECCIÓN: MISTERIO ---
+        if (mysteryBooks.isNotEmpty()) {
+            item {
+                SectionHeader(title = "Misterio y Suspenso")
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(mysteryBooks) { book ->
+                        BookCard(book = book, onClick = { onBookClick(book.id) })
+                    }
+                }
+            }
+        }
+
+        // --- SECCIÓN: AVENTURA ---
+        if (adventureBooks.isNotEmpty()) {
+            item {
+                SectionHeader(title = "Grandes Aventuras")
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(adventureBooks) { book ->
+                        BookCard(book = book, onClick = { onBookClick(book.id) })
+                    }
+                }
+            }
+        }
+
+        // --- SECCIÓN: CLÁSICOS GRATUITOS (GUTENDEX) ---
+        if (freeClassics.isNotEmpty()) {
+            item {
+                SectionHeader(title = "Clásicos de Dominio Público")
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(freeClassics) { book ->
+                        BookCard(book = book, onClick = { onBookClick(book.id) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SectionHeader(title: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
     }
 }

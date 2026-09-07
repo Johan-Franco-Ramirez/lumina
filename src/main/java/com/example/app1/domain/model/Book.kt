@@ -26,7 +26,8 @@ data class Book(
     val isIllustrated: Boolean,
     val rating: Double?,
     val origin: BookOrigin = BookOrigin.REMOTE,
-    val pdfUri: String? = null // Solo se llena si origin es PERSONAL_PDF
+    val pdfUri: String? = null, // Solo se llena si origin es PERSONAL_PDF
+    val readUrl: String? = null  // URL para lectura online (Gutendex)
 )
 
 /**
@@ -40,5 +41,6 @@ data class Book(
  */
 enum class BookOrigin {
     REMOTE,       // Proviene de Google Books API
-    PERSONAL_PDF  // Subido por el usuario
+    PERSONAL_PDF, // Subido por el usuario
+    GUTENDEX      // Proviene de Gutendex (Dominio Público)
 }

@@ -50,7 +50,6 @@ class ReaderRepositoryImpl(
         }
     }
 
-    // --- PROCESAMIENTO DE ARCHIVOS .CBZ / .ZIP ---
     private fun parseCbzFile(uri: Uri): List<Bitmap> {
         val bitmaps = mutableListOf<Bitmap>()
         val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
@@ -59,11 +58,9 @@ class ReaderRepositoryImpl(
             ZipInputStream(stream).use { zipStream ->
                 var entry = zipStream.nextEntry
                 while (entry != null) {
-                    // Ignoramos carpetas del sistema MacOS (__MACOSX) y subcarpetas vacías
                     if (!entry.isDirectory && !entry.name.contains("__MACOSX")) {
                         val name = entry.name.lowercase()
                         if (name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".webp")) {
-                            // Decodificamos la imagen directamente desde el flujo de bytes comprimido
                             val bitmap = BitmapFactory.decodeStream(zipStream)
                             if (bitmap != null) {
                                 bitmaps.add(bitmap)
@@ -78,43 +75,40 @@ class ReaderRepositoryImpl(
         return bitmaps
     }
 
-    // --- PROCESAMIENTO DE ARCHIVOS .PDF ---
     private fun parsePdfFile(uri: Uri): List<Bitmap> {
         val bitmaps = mutableListOf<Bitmap>()
-
-        // Android SAF requiere copiar temporalmente el archivo PDF para obtener un FileDescriptor de lectura directa
         val tempFile = File(context.cacheDir, "temp_reader_file.pdf")
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(tempFile).use { output ->
-                input.copyTo(output)
+        
+        try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    input.copyTo(output)
+                }
             }
+
+            val fileDescriptor = ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY)
+            val pdfRenderer = PdfRenderer(fileDescriptor)
+            val pageCount = pdfRenderer.pageCount
+
+            for (i in 0 until pageCount) {
+                val page = pdfRenderer.openPage(i)
+                val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                bitmaps.add(bitmap)
+                page.close()
+            }
+
+            pdfRenderer.close()
+            fileDescriptor.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            tempFile.delete()
         }
-
-        val fileDescriptor = ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY)
-        val pdfRenderer = PdfRenderer(fileDescriptor)
-        val pageCount = pdfRenderer.pageCount
-
-        for (i in 0 until pageCount) {
-            val page = pdfRenderer.openPage(i)
-
-            // Creamos un Canvas del tamaño de la página del PDF en alta resolución (puedes ajustar el multiplicador)
-            val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
-
-            // Renderizamos el contenido del PDF dentro de nuestro mapa de bits vacío
-            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            bitmaps.add(bitmap)
-
-            page.close()
-        }
-
-        pdfRenderer.close()
-        fileDescriptor.close()
-        tempFile.delete() // Limpiamos la caché inmediatamente
 
         return bitmaps
     }
 
-    // --- AYUDANTE PARA LEER EL NOMBRE DEL ARCHIVO ---
     private fun getFileName(uri: Uri): String? {
         var name: String? = null
         if (uri.scheme == "content") {
@@ -130,7 +124,6 @@ class ReaderRepositoryImpl(
     }
 
     private suspend fun fetchRemoteFile(url: String, isStreaming: Boolean): List<Bitmap> = withContext(Dispatchers.IO) {
-        // En blanco por ahora para enfocarnos en los archivos locales que subas
         emptyList()
     }
 }

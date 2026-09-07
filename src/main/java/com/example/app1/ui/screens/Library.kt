@@ -110,7 +110,6 @@ fun LibraryScreen(
     ) { padding ->
         when (selectedTab) {
             3 -> {
-                // Pestaña LOCAL: Funcionalidad solicitada por el usuario
                 LocalReaderSection(
                     padding = padding,
                     readerViewModel = readerViewModel,
@@ -128,6 +127,7 @@ fun LibraryScreen(
                     padding = padding,
                     books = currentList,
                     onBookClick = onBookClick,
+                    onDeleteBook = { bookId -> viewModel.deleteBook(bookId) },
                     emptyMessage = when (selectedTab) {
                         0 -> "No tienes libros pendientes por leer."
                         1 -> "No estás leyendo ningún libro actualmente."
@@ -149,17 +149,12 @@ fun LocalReaderSection(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri: Uri? ->
             uri?.let { safeUri ->
-                // Detectamos el modo inicial de forma básica según la extensión
                 val fileName = safeUri.toString().lowercase()
                 val initialMode = if (fileName.contains(".pdf")) ReaderMode.PDF else ReaderMode.ComicLTR
-                
-                // Le ordenamos al ViewModel procesar el archivo subido
                 readerViewModel.loadBook(source = BookSource.Local(safeUri), initialMode = initialMode)
-                
-                // Navegamos al lector para ver el progreso/resultado
                 onNavigateToReader()
             }
-        }
+        },
     )
 
     Box(
@@ -170,15 +165,16 @@ fun LocalReaderSection(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "Carga un archivo desde tu dispositivo para leerlo al instante.",
+                text = "Carga un archivo local para leerlo al instante.",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 16.dp),
                 textAlign = TextAlign.Center
             )
-            Button(onClick = { 
-                // Filtramos para aceptar exclusivamente PDFs y archivos ZIP/CBZ
-                filePickerLauncher.launch(arrayOf("application/pdf", "application/zip", "application/x-cbz"))
-            }) {
+            Button(
+                onClick = { 
+                    filePickerLauncher.launch(arrayOf("application/pdf", "application/zip", "application/x-cbz"))
+                }
+            ) {
                 Text("Subir y Leer Archivo Local")
             }
         }
@@ -190,6 +186,7 @@ fun LibraryContent(
     padding: PaddingValues,
     books: List<Book>,
     onBookClick: (String) -> Unit,
+    onDeleteBook: (String) -> Unit,
     emptyMessage: String
 ) {
     if (books.isEmpty()) {
@@ -218,7 +215,8 @@ fun LibraryContent(
                 BookCard(
                     book = book,
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { onBookClick(book.id) }
+                    onClick = { onBookClick(book.id) },
+                    onDeleteClick = { onDeleteBook(book.id) }
                 )
             }
         }

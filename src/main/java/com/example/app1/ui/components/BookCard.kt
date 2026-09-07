@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.*
@@ -27,7 +28,8 @@ import com.example.app1.domain.model.BookOrigin
 fun BookCard(
     book: Book,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onDeleteClick: (() -> Unit)? = null
 ) {
     Card(
         onClick = onClick,
@@ -117,6 +119,23 @@ fun BookCard(
                     fontSize = 10.sp,
                     lineHeight = 14.sp
                 )
+
+                if (onDeleteClick != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    IconButton(
+                        onClick = onDeleteClick,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar libro",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
         }
     }

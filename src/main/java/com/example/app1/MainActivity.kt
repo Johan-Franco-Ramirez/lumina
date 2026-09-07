@@ -58,9 +58,8 @@ fun LuminaApp(settingsViewModel: SettingsViewModel) {
     val isDarkTheme by settingsViewModel.isDarkTheme.collectAsState()
     val context = LocalContext.current
 
-    // Inicializamos el ReaderViewModel con su Factory
     val readerViewModel: ReaderViewModel = viewModel(
-        factory = ReaderViewModelFactory(context)
+        factory = ReaderViewModelFactory(context),
     )
 
     Scaffold(
@@ -72,9 +71,11 @@ fun LuminaApp(settingsViewModel: SettingsViewModel) {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) { 
-                HomeScreen(onBookClick = { bookId -> 
-                    navController.navigate(Screen.BookDetail.createRoute(bookId))
-                }) 
+                HomeScreen(
+                    onBookClick = { bookId -> 
+                        navController.navigate(Screen.BookDetail.createRoute(bookId))
+                    }
+                ) 
             }
             composable(Screen.Search.route) { 
                 SearchScreen(onBookClick = { bookId ->

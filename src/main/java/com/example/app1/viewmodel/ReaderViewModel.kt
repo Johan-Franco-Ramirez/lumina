@@ -12,11 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// Representa todo lo que la interfaz gráfica necesita saber en tiempo real
 data class ReaderUiState(
     val pages: List<Bitmap> = emptyList(),
     val isLoading: Boolean = false,
-    val currentMode: ReaderMode = ReaderMode.ComicLTR, // Modo por defecto
+    val currentMode: ReaderMode = ReaderMode.ComicLTR,
     val currentPageIndex: Int = 0,
     val errorMessage: String? = null
 )
@@ -30,7 +29,7 @@ class ReaderViewModel(
 
     fun loadBook(source: BookSource, initialMode: ReaderMode) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, currentMode = initialMode) }
+            _uiState.update { it.copy(isLoading = true, currentMode = initialMode, pages = emptyList(), currentPageIndex = 0) }
 
             repository.loadBookPages(source).collect { loadedPages ->
                 _uiState.update {
@@ -50,6 +49,5 @@ class ReaderViewModel(
 
     fun updateCurrentPage(index: Int) {
         _uiState.update { it.copy(currentPageIndex = index) }
-        // Aquí conectarás en el futuro tu base de datos Room para guardar progreso de forma silenciosa
     }
 }

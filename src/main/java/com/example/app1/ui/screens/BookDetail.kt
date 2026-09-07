@@ -1,5 +1,7 @@
 package com.example.app1.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -7,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.BookmarkAdded
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LibraryAdd
@@ -20,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.app1.data.database.ReadingStatus
+import com.example.app1.domain.model.BookOrigin
 import com.example.app1.ui.components.AgeBadge
 import com.example.app1.ui.components.GenreChip
 import com.example.app1.ui.components.IllustratedBadge
@@ -44,6 +49,7 @@ fun BookDetailScreen(
     viewModel: BookDetailViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(bookId) {
         viewModel.loadBook(bookId)
@@ -119,6 +125,31 @@ fun BookDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // --- BOTÓN: LEER (Gutendex o PDF) ---
+                    val readingUrl = book.readUrl ?: book.pdfUri
+                    if (readingUrl != null) {
+                        Button(
+                            onClick = {
+                                // Al empezar a leer, lo movemos automáticamente a "Leyendo"
+                                viewModel.updateReadingStatus(book, ReadingStatus.READING)
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(readingUrl))
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (status == ReadingStatus.READING) 
+                                    MaterialTheme.colorScheme.primary 
+                                else MaterialTheme.colorScheme.tertiary
+                            ),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Icon(Icons.Default.AutoStories, null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (status == ReadingStatus.READING) "CONTINUAR LEYENDO" else "COMENZAR LECTURA")
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
                     // --- BOTONES DE ACCIÓN (ROOM) ---
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         // Botón: Quiero leer
@@ -137,22 +168,23 @@ fun BookDetailScreen(
                                 null
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(if (status == ReadingStatus.WANT_TO_READ) "Guardado" else "Quiero leer")
+                            Text(if (status == ReadingStatus.WANT_TO_READ) "En Lista" else "Por leer")
                         }
 
                         // Botón: Leído
-                        OutlinedButton(
+                        Button(
                             onClick = { viewModel.updateReadingStatus(book, ReadingStatus.READ) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(4.dp),
                             colors = if (status == ReadingStatus.READ) {
-                                ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                                ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                             } else {
-                                ButtonDefaults.outlinedButtonColors()
+                                ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                             }
                         ) {
-                            if (status == ReadingStatus.READ) Icon(Icons.Default.Check, null)
-                            Text(if (status == ReadingStatus.READ) "Finalizado" else "Marcar Leído")
+                            Icon(if (status == ReadingStatus.READ) Icons.Default.Check else Icons.Default.Check, null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (status == ReadingStatus.READ) "Finalizado" else "Ya me lo leí")
                         }
                     }
 
