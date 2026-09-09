@@ -1,8 +1,31 @@
-*.log
-*.hprof
-*.iml
-
-# Agrega estas líneas:
-/build/
-.gradle/
+# Android Studio / IntelliJ
 .idea/
+.gradle/
+*.iml
+.artifacts/
+*.hprof
+*.log
+
+# Build folders
+build/
+app/build/
+*/build/
+
+# Local configuration
+local.properties
+
+# Captures and traces
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Generated files
+.kotlin/
+.navigation/
+
+# Keys / Secrets (Optional but recommended)
+# google-services.json
+
+# OS specific
+.DS_Store
+Thumbs.db
