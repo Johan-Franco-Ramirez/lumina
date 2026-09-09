@@ -9,6 +9,7 @@ import androidx.room.EntityDeletionOrUpdateAdapter;
 import androidx.room.EntityInsertionAdapter;
 import androidx.room.RoomDatabase;
 import androidx.room.RoomSQLiteQuery;
+import androidx.room.SharedSQLiteStatement;
 import androidx.room.util.CursorUtil;
 import androidx.room.util.DBUtil;
 import androidx.sqlite.db.SupportSQLiteStatement;
@@ -41,6 +42,10 @@ public final class LibraryDao_Impl implements LibraryDao {
   private final EntityInsertionAdapter<LibraryBookEntity> __insertionAdapterOfLibraryBookEntity;
 
   private final EntityDeletionOrUpdateAdapter<LibraryBookEntity> __deletionAdapterOfLibraryBookEntity;
+
+  private final SharedSQLiteStatement __preparedStmtOfDeleteLibraryEntry;
+
+  private final SharedSQLiteStatement __preparedStmtOfDeleteBookEntry;
 
   public LibraryDao_Impl(@NonNull final RoomDatabase __db) {
     this.__db = __db;
@@ -106,6 +111,22 @@ public final class LibraryDao_Impl implements LibraryDao {
         statement.bindString(1, entity.getBookId());
       }
     };
+    this.__preparedStmtOfDeleteLibraryEntry = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM library WHERE bookId = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfDeleteBookEntry = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM books WHERE id = ?";
+        return _query;
+      }
+    };
   }
 
   @Override
@@ -159,6 +180,57 @@ public final class LibraryDao_Impl implements LibraryDao {
           return Unit.INSTANCE;
         } finally {
           __db.endTransaction();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object deleteLibraryEntry(final String bookId,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfDeleteLibraryEntry.acquire();
+        int _argIndex = 1;
+        _stmt.bindString(_argIndex, bookId);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfDeleteLibraryEntry.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object deleteBookEntry(final String bookId, final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfDeleteBookEntry.acquire();
+        int _argIndex = 1;
+        _stmt.bindString(_argIndex, bookId);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfDeleteBookEntry.release(_stmt);
         }
       }
     }, $completion);

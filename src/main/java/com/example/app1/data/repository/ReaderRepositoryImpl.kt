@@ -3,6 +3,7 @@ package com.example.app1.data.repository
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -92,7 +93,12 @@ class ReaderRepositoryImpl(
 
             for (i in 0 until pageCount) {
                 val page = pdfRenderer.openPage(i)
+                // ARGB_8888 es necesario para PdfRenderer
                 val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
+                
+                // IMPORTANTE: Rellenamos con blanco antes de renderizar para evitar transparencias negras
+                bitmap.eraseColor(Color.WHITE)
+                
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 bitmaps.add(bitmap)
                 page.close()

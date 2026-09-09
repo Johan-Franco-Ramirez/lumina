@@ -1,29 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.app1-mergeDebugResources-72:/values-v21/values-v21.xml",
+            "outputFile": "com.example.app1-mergeDebugResources-77:/values-v21/values-v21.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Acer\\.gradle\\caches\\8.10.2\\transforms\\b40593707426ab76f610b6ab29d01dd1\\transformed\\credentials-play-services-auth-1.2.0-rc01\\res\\values-v21\\values-v21.xml",
-                    "from": {
-                        "startLines": "2",
-                        "startColumns": "4",
-                        "startOffsets": "55",
-                        "endLines": "9",
-                        "endColumns": "12",
-                        "endOffsets": "543"
-                    },
-                    "to": {
-                        "startLines": "10",
-                        "startColumns": "4",
-                        "startOffsets": "864",
-                        "endLines": "17",
-                        "endColumns": "12",
-                        "endOffsets": "1352"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\Acer\\.gradle\\caches\\8.10.2\\transforms\\9ad0874127261991b8ca4a8d49685646\\transformed\\core-1.15.0\\res\\values-v21\\values-v21.xml",
+                    "source": "C:\\Users\\Acer\\.gradle\\caches\\9.3.0\\transforms\\61a650df26d7d431b393ac98f4efd91e\\workspace\\transformed\\core-1.15.0\\res\\values-v21\\values-v21.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,13",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4",
@@ -39,6 +20,25 @@
                         "endLines": "2,3,4,5,6,7,8,9,20,25",
                         "endColumns": "117,63,66,63,115,125,125,127,12,12",
                         "endOffsets": "168,232,299,363,479,605,731,859,1524,1876"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\Acer\\.gradle\\caches\\9.3.0\\transforms\\4ef973d437916dafe21bfa616f6b92e7\\workspace\\transformed\\credentials-play-services-auth-1.2.0-rc01\\res\\values-v21\\values-v21.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "9",
+                        "endColumns": "12",
+                        "endOffsets": "543"
+                    },
+                    "to": {
+                        "startLines": "10",
+                        "startColumns": "4",
+                        "startOffsets": "864",
+                        "endLines": "17",
+                        "endColumns": "12",
+                        "endOffsets": "1352"
                     }
                 }
             ]

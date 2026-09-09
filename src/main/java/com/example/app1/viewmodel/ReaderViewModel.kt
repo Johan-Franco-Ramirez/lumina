@@ -12,10 +12,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class ReaderVisualTheme {
+    LIGHT, DARK, SEPIA
+}
+
 data class ReaderUiState(
     val pages: List<Bitmap> = emptyList(),
     val isLoading: Boolean = false,
     val currentMode: ReaderMode = ReaderMode.ComicLTR,
+    val visualTheme: ReaderVisualTheme = ReaderVisualTheme.SEPIA,
     val currentPageIndex: Int = 0,
     val errorMessage: String? = null
 )
@@ -45,6 +50,10 @@ class ReaderViewModel(
 
     fun changeReaderMode(newMode: ReaderMode) {
         _uiState.update { it.copy(currentMode = newMode) }
+    }
+
+    fun changeVisualTheme(newTheme: ReaderVisualTheme) {
+        _uiState.update { it.copy(visualTheme = newTheme) }
     }
 
     fun updateCurrentPage(index: Int) {

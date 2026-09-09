@@ -22,4 +22,4 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Lumina"
+rootProject.name = "lumina"

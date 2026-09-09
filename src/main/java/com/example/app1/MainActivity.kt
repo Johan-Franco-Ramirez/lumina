@@ -25,7 +25,7 @@ import com.example.app1.ui.screens.LibraryScreen
 import com.example.app1.ui.screens.ProfileScreen
 import com.example.app1.ui.screens.ReaderScreen
 import com.example.app1.ui.screens.SearchScreen
-import com.example.app1.ui.theme.App1Theme
+import com.example.app1.ui.theme.LuminaTheme
 import com.example.app1.viewmodel.ReaderViewModel
 import com.example.app1.viewmodel.ReaderViewModelFactory
 import com.example.app1.viewmodel.SettingsViewModel
@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
             val settingsViewModel: SettingsViewModel = viewModel()
             val isDarkTheme by settingsViewModel.isDarkTheme.collectAsState()
 
-            App1Theme(darkTheme = isDarkTheme) {
+            LuminaTheme(darkTheme = isDarkTheme) {
                 LuminaApp(settingsViewModel)
             }
         }
