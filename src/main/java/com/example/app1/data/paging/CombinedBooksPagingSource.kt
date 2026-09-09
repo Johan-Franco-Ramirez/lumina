@@ -5,10 +5,15 @@ import androidx.paging.PagingState
 import com.example.app1.data.api.OpenLibraryService
 import com.example.app1.data.api.GutendexService
 import com.example.app1.domain.model.Book
-import com.example.app1.domain.model.BookOrigin
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
+/**
+ * FUENTE DE DATOS COMBINADA (CombinedBooksPagingSource)
+ * 
+ * Mezcla resultados de OpenLibrary y Gutendex.
+ * Implementa resiliencia: si una API falla, muestra los resultados de la otra.
+ */
 class CombinedBooksPagingSource(
     private val openLibraryService: OpenLibraryService,
     private val gutendexService: GutendexService,
@@ -20,31 +25,54 @@ class CombinedBooksPagingSource(
         val page = params.key ?: 1
         val limit = params.loadSize / 2
 
+        // Si no hay consulta ni filtro, devolvemos página vacía inmediatamente
+        if (query.isBlank() && filter.isBlank()) {
+            return LoadResult.Page(data = emptyList(), prevKey = null, nextKey = null)
+        }
+
         return try {
             coroutineScope {
+                // Ejecutamos ambas peticiones en paralelo
                 val openLibraryDeferred = async {
-                    openLibraryService.searchBooks(
-                        query = if (filter.isNotEmpty()) "$query $filter" else query,
-                        page = page,
-                        limit = limit
-                    )
+                    try {
+                        val apiQuery = if (filter.isNotEmpty()) {
+                            if (query.isNotEmpty()) "$query $filter" else filter
+                        } else query
+                        
+                        openLibraryService.searchBooks(
+                            query = apiQuery,
+                            page = page,
+                            limit = limit
+                        ).docs.map { it.toDomain() }
+                    } catch (e: Exception) {
+                        emptyList<Book>()
+                    }
                 }
                 
                 val gutendexDeferred = async {
-                    gutendexService.searchBooks(
-                        query = query,
-                        languages = "es",
-                        page = page
-                    )
+                    try {
+                        // Solo buscamos en Gutendex si hay una palabra clave (query)
+                        if (query.isNotBlank()) {
+                            gutendexService.searchBooks(
+                                query = query,
+                                languages = "es",
+                                page = page
+                            ).results.map { it.toDomain() }
+                        } else {
+                            emptyList<Book>()
+                        }
+                    } catch (e: Exception) {
+                        emptyList<Book>()
+                    }
                 }
 
-                val openLibraryResponse = openLibraryDeferred.await()
-                val gutendexResponse = gutendexDeferred.await()
+                // Esperamos los resultados
+                val openLibraryBooks = openLibraryDeferred.await()
+                val gutendexBooks = gutendexDeferred.await()
 
-                val openLibraryBooks = openLibraryResponse.docs.map { it.toDomain() }
-                val gutendexBooks = gutendexResponse.results.map { it.toDomain() }
-
-                val combined = (openLibraryBooks + gutendexBooks).distinctBy { it.title.lowercase() }
+                // Combinamos y eliminamos duplicados por título
+                val combined = (openLibraryBooks + gutendexBooks)
+                    .distinctBy { it.title.lowercase().trim() }
 
                 LoadResult.Page(
                     data = combined,
