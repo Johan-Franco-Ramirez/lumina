@@ -15,8 +15,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -32,20 +34,28 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val _selectedAgeRange = MutableStateFlow<String?>(null)
     private val _isIllustrated = MutableStateFlow(value = false)
 
+    private data class SearchParameters(
+        val query: String,
+        val genre: String,
+        val age: String?,
+        val illustrated: Boolean
+    )
+
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-    val pagingDataFlow: Flow<PagingData<Book>> = _searchQuery
-        .debounce(600.milliseconds) // Esperamos 600ms antes de disparar la búsqueda
-        .flatMapLatest { query ->
-            val genre = _selectedFilter.value
-            val age = _selectedAgeRange.value
-            val illustrated = _isIllustrated.value
-            
-            if (query.length < 3 && genre.isEmpty()) {
-                MutableStateFlow(PagingData.empty())
-            } else {
-                searchBooksPaginated(query, genre, age, illustrated)
-            }
-        }.cachedIn(viewModelScope)
+    val pagingDataFlow: Flow<PagingData<Book>> = combine(
+        _searchQuery.debounce(600.milliseconds),
+        _selectedFilter,
+        _selectedAgeRange,
+        _isIllustrated
+    ) { query, genre, age, illustrated ->
+        SearchParameters(query, genre, age, illustrated)
+    }.flatMapLatest { params ->
+        if (params.query.length < 3 && params.genre.isEmpty()) {
+            flowOf(PagingData.empty())
+        } else {
+            searchBooksPaginated(params.query, params.genre, params.age, params.illustrated)
+        }
+    }.cachedIn(viewModelScope)
 
     private fun searchBooksPaginated(
         query: String, 

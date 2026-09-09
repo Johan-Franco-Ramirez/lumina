@@ -18,7 +18,7 @@ import androidx.room.TypeConverters
  */
 @Database(
     entities = [BookEntity::class, LibraryBookEntity::class], 
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(LuminaConverters::class)
@@ -40,7 +40,9 @@ abstract class LuminaDatabase : RoomDatabase() {
                     context.applicationContext,
                     LuminaDatabase::class.java,
                     "lumina_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }
