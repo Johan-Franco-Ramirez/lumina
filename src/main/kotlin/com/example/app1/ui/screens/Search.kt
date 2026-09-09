@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
@@ -12,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
@@ -24,6 +27,7 @@ import com.example.app1.viewmodel.SearchViewModel
  * PANTALLA DE BÚSQUEDA (SearchScreen)
  *
  * Actualizada con filtros por categorías: Género, Edad e Ilustraciones.
+ * Implementa búsqueda en tiempo real con Paging 3.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,12 +70,20 @@ fun SearchScreen(
             item {
                 OutlinedTextField(
                     value = query,
-                    onValueChange = { query = it },
+                    onValueChange = { 
+                        query = it
+                        // Búsqueda en tiempo real (el ViewModel aplica debounce de 600ms)
+                        viewModel.performSearch(it, selectedGenre, selectedAgeRange, isIllustrated)
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Título, autor o palabra clave...") },
                     leadingIcon = { Icon(Icons.Default.Search, null) },
                     shape = MaterialTheme.shapes.medium,
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = {
+                        viewModel.performSearch(query, selectedGenre, selectedAgeRange, isIllustrated)
+                    }),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.secondary
@@ -91,7 +103,10 @@ fun SearchScreen(
                     items(genres) { genre ->
                         FilterChip(
                             selected = selectedGenre == genre,
-                            onClick = { selectedGenre = if (selectedGenre == genre) null else genre },
+                            onClick = { 
+                                selectedGenre = if (selectedGenre == genre) null else genre
+                                viewModel.performSearch(query, selectedGenre, selectedAgeRange, isIllustrated)
+                            },
                             label = { Text(genre) }
                         )
                     }
@@ -109,7 +124,10 @@ fun SearchScreen(
                     items(ageRanges) { range ->
                         FilterChip(
                             selected = selectedAgeRange == range,
-                            onClick = { selectedAgeRange = if (selectedAgeRange == range) null else range },
+                            onClick = { 
+                                selectedAgeRange = if (selectedAgeRange == range) null else range 
+                                viewModel.performSearch(query, selectedGenre, selectedAgeRange, isIllustrated)
+                            },
                             label = { Text(range) }
                         )
                     }
@@ -120,13 +138,16 @@ fun SearchScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = isIllustrated,
-                        onCheckedChange = { isIllustrated = it }
+                        onCheckedChange = { 
+                            isIllustrated = it 
+                            viewModel.performSearch(query, selectedGenre, selectedAgeRange, isIllustrated)
+                        }
                     )
                     Text("Solo libros ilustrados", style = MaterialTheme.typography.bodyMedium)
                 }
             }
 
-            // --- BOTÓN APLICAR ---
+            // --- BOTÓN APLICAR (Opcional, ya que es en tiempo real) ---
             item {
                 Button(
                     onClick = { 
@@ -137,16 +158,16 @@ fun SearchScreen(
                 ) {
                     Icon(Icons.Default.FilterList, null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("APLICAR FILTROS Y BUSCAR")
+                    Text("BUSCAR AHORA")
                 }
             }
 
             // --- RESULTADOS ---
             item {
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
-            if (pagingItems.itemCount == 0 && pagingItems.loadState.refresh !is LoadState.Loading) {
+            if (pagingItems.itemCount == 0 && pagingItems.loadState.refresh is LoadState.NotLoading) {
                 item {
                     SearchInfoMessage(
                         title = "Busca tu próximo libro",
@@ -154,7 +175,7 @@ fun SearchScreen(
                     )
                 }
             } else {
-                when (pagingItems.loadState.refresh) {
+                when (val refreshState = pagingItems.loadState.refresh) {
                     is LoadState.Loading -> {
                         item {
                             Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
@@ -164,14 +185,14 @@ fun SearchScreen(
                     }
                     is LoadState.Error -> {
                         item {
-                            SearchInfoMessage(title = "Aviso", message = "Error al cargar resultados.")
+                            SearchInfoMessage(title = "Aviso", message = "Error al cargar resultados: ${refreshState.error.localizedMessage}")
                         }
                     }
                     else -> {
                         // Mostramos resultados de 2 en 2
                         val count = pagingItems.itemCount
                         for (i in 0 until count step 2) {
-                            item(key = pagingItems[i]?.id ?: i) {
+                            item(key = pagingItems.peek(i)?.id ?: "item_$i") {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(16.dp)
