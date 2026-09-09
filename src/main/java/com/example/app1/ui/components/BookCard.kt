@@ -2,12 +2,10 @@ package com.example.app1.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.HistoryEdu
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -56,56 +54,28 @@ fun BookCard(
                     contentScale = ContentScale.Crop
                 )
                 
-                // Badge: [🌐 Catálogo] o [📄 Personal] o [🏛️ Dominio Público]
+                // Badge: [🌐 Catálogo] o [📄 Personal]
                 Surface(
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                     shape = RoundedCornerShape(bottomStart = 8.dp),
                     modifier = Modifier.align(Alignment.TopEnd)
                 ) {
-                    val (icon, label) = when (book.origin) {
-                        BookOrigin.REMOTE -> Icons.Default.Language to "Catálogo"
-                        BookOrigin.PERSONAL_PDF -> Icons.Default.Description to "Personal"
-                        BookOrigin.GUTENDEX -> Icons.Default.HistoryEdu to "Dominio Público"
-                    }
-
                     Row(
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = icon,
+                            imageVector = if (book.origin == BookOrigin.REMOTE) Icons.Default.Language else Icons.Default.Description,
                             contentDescription = null,
                             modifier = Modifier.size(10.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = label,
+                            text = if (book.origin == BookOrigin.REMOTE) "Catálogo" else "Personal",
                             style = MaterialTheme.typography.labelSmall,
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                // Botón de eliminar (solo si onDeleteClick no es nulo)
-                if (onDeleteClick != null) {
-                    IconButton(
-                        onClick = onDeleteClick,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(4.dp)
-                            .size(32.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f),
-                                shape = CircleShape
-                            )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Eliminar libro",
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
                 }
@@ -125,8 +95,7 @@ fun BookCard(
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.primary, // Cambiado a primary para resaltar
-                    fontWeight = FontWeight.Medium
+                    color = MaterialTheme.colorScheme.secondary
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -150,6 +119,23 @@ fun BookCard(
                     fontSize = 10.sp,
                     lineHeight = 14.sp
                 )
+
+                if (onDeleteClick != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    IconButton(
+                        onClick = onDeleteClick,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar libro",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
         }
     }

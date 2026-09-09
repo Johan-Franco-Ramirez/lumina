@@ -20,6 +20,9 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object Library : Screen("library", "Mi Biblioteca", Icons.AutoMirrored.Filled.LibraryBooks)
     object Profile : Screen("profile", "Perfil", Icons.Default.Person)
     
+    // Ruta para el lector
+    object Reader : Screen("reader", "Lector", Icons.AutoMirrored.Filled.MenuBook)
+
     // Ruta con argumento para el detalle del libro
     object BookDetail : Screen("bookDetail/{bookId}", "Detalle", Icons.AutoMirrored.Filled.MenuBook) {
         fun createRoute(bookId: String) = "bookDetail/$bookId"
