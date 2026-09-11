@@ -4,16 +4,17 @@
 
 ---
 
-##  Características Principales
+## ✨ Características Principales
 
-- **🔍 Exploración Global**: Integración dual con **Google Books API** y **Gutendex**, permitiendo buscar desde los últimos best-sellers hasta clásicos de dominio público.
+- **🔍 Exploración Global**: Integración dual con **Open Library API** y **Gutendex**, permitiendo buscar desde los últimos best-sellers hasta clásicos de dominio público de forma totalmente abierta y gratuita.
+- **📜 Scroll Infinito**: Implementación de **Paging 3** para una navegación fluida por miles de resultados de búsqueda sin afectar el rendimiento del dispositivo.
 - **📖 Lectura Integrada**: Acceso directo a previsualizaciones de libros y lectura online de textos clásicos sin salir de la app.
 - **📁 Biblioteca Personal (PDF)**: Importa tus propios archivos PDF para tener todos tus documentos y libros personales organizados en un solo lugar.
 - **⏳ Gestión de Estados**: Organiza tu flujo de lectura en tres categorías inteligentes:
     - **Por leer**: Tu lista de deseos y pendientes.
     - **Leyendo**: Acceso rápido a tus obras actuales.
     - **Leídos**: Tu historial de conquistas literarias.
-- **🏠 Inicio Dinámico**: Una pantalla principal que se adapta a ti, mostrando secciones de "Continúa leyendo", libros destacados y tendencias globales.
+- **🏠 Inicio Dinámico**: Una pantalla principal que se adapta a ti, mostrando secciones de "Continúa leyendo", libros recomendados aleatorios de las APIs y múltiples categorías (Misterio, Aventura, Sci-Fi).
 - **🗑️ Control Total**: Elimina fácilmente cualquier libro de tu biblioteca para mantener tu colección limpia y actualizada.
 
 ---
@@ -23,10 +24,10 @@
 - **Lenguaje**: [Kotlin](https://kotlinlang.org/)
 - **UI**: [Jetpack Compose](https://developer.android.com/jetpack/compose) (Material 3)
 - **Arquitectura**: MVVM (Model-View-ViewModel) + Capa de Repositorio.
+- **Paginación**: [Paging 3](https://developer.android.com/topic/libraries/architecture/paging/v3-paged-data) para carga eficiente de grandes volúmenes de datos.
 - **Base de Datos**: [Room](https://developer.android.com/training/data-storage/room) para persistencia local.
-- **Red**: [Retrofit](https://square.github.io/retrofit/) & [Gson](https://github.com/google/gson) para consumo de APIs.
+- **Red**: [Retrofit](https://square.github.io/retrofit/) & [Gson](https://github.com/google/gson) para consumo de las APIs de Open Library y Gutendex.
 - **Carga de Imágenes**: [Coil](https://coil-kt.github.io/coil/) para carga asíncrona de portadas.
-- **Inyección de Dependencias**: Gestión manual optimizada (escalable a Hilt).
 - **Control de Versiones**: Gradle Version Catalog (`libs.versions.toml`).
 
 ---
@@ -35,7 +36,7 @@
 
 ```text
 com.example.app1
-├── data           # Servicios API, DAO de Room y Repositorios
+├── data           # Servicios API, DAO de Room, Repositorios y Paging Sources
 ├── domain         # Modelos de datos puros (Clean Architecture)
 ├── ui
 │   ├── components # Componentes reutilizables (Cards, Badges, etc.)
@@ -64,15 +65,14 @@ com.example.app1
 
 ## 📸 Pantallas
 
-- **Inicio**: Descubre nuevas obras y retoma tus lecturas.
-- **Explorar**: Buscador inteligente con filtros por género.
+- **Inicio**: Descubre nuevas obras dinámicas y retoma tus lecturas.
+- **Explorar**: Buscador inteligente con scroll infinito y filtros avanzados.
 - **Mi Biblioteca**: Organiza tus PDFs y libros favoritos.
-- **Detalle**: Sinopsis completa, autor y opciones de lectura.
-
+- **Detalle**: Sinopsis completa, autor y opciones de lectura directa.
 
 ---
-*Desarrollado con  por Lumina Team.*
+*Desarrollado con ❤️ por Lumina Team.*
 
-- johan franco ramirez 
-- jhon harold sanchez
-- yeiker daniel solano
+- Johan Franco Ramirez 
+- Jhon Harold Sanchez
+- Yeiker Daniel Solano
