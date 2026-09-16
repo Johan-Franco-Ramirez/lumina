@@ -5,13 +5,6 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * DATA ACCESS OBJECT (LibraryDao)
- * 
- * ¿Qué es?
- * La interfaz que define cómo interactuamos con las tablas.
- * 
- * ¿Para qué sirve?
- * Aquí escribimos las consultas SQL. Room se encarga de ejecutarlas 
- * de forma segura y eficiente.
  */
 @Dao
 interface LibraryDao {
@@ -40,6 +33,17 @@ interface LibraryDao {
 
     @Query("DELETE FROM books WHERE id = :bookId")
     suspend fun deleteBookEntry(bookId: String)
+
+    // --- Gestión de Caché (Carga Instantánea) ---
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCachedBooks(books: List<CachedBookEntity>)
+
+    @Query("SELECT * FROM cached_books WHERE category = :category ORDER BY timestamp DESC")
+    suspend fun getCachedBooksByCategory(category: String): List<CachedBookEntity>
+
+    @Query("DELETE FROM cached_books WHERE category = :category")
+    suspend fun clearCacheByCategory(category: String)
 
     // --- Consultas Reactivas ---
 

@@ -1,9 +1,11 @@
 package com.example.app1.data.repository
 
 import com.example.app1.data.api.OpenLibraryService
+import com.example.app1.data.database.CachedBookEntity
 import com.example.app1.data.database.LibraryBookEntity
 import com.example.app1.data.database.LibraryDao
 import com.example.app1.data.database.ReadingStatus
+import com.example.app1.data.database.toCachedEntity
 import com.example.app1.data.database.toDomain
 import com.example.app1.data.database.toEntity
 import com.example.app1.domain.model.Book
@@ -18,6 +20,17 @@ class BookRepository(
     private val apiService: OpenLibraryService,
     private val libraryDao: LibraryDao,
 ) {
+
+    // --- FUENTE DE DATOS: CACHÉ (CARGA INSTANTÁNEA) ---
+
+    suspend fun getCachedBooks(category: String): List<Book> {
+        return libraryDao.getCachedBooksByCategory(category).map { it.toDomain() }
+    }
+
+    suspend fun saveBooksToCache(books: List<Book>, category: String) {
+        libraryDao.clearCacheByCategory(category)
+        libraryDao.insertCachedBooks(books.map { it.toCachedEntity(category) })
+    }
 
     // --- FUENTE DE DATOS: API (REMOTO) ---
 

@@ -8,17 +8,10 @@ import androidx.room.TypeConverters
 
 /**
  * BASE DE DATOS PRINCIPAL (LuminaDatabase)
- * 
- * ¿Qué es?
- * La pieza central que une las tablas (Entities) con las órdenes (DAO).
- * 
- * ¿Para qué sirve?
- * Administra la conexión con SQLite y asegura que solo exista una instancia 
- * abierta en toda la aplicación (Patrón Singleton).
  */
 @Database(
-    entities = [BookEntity::class, LibraryBookEntity::class], 
-    version = 3, // Incrementado a 3 por la adición de BookType en la estructura de la tabla
+    entities = [BookEntity::class, LibraryBookEntity::class, CachedBookEntity::class], 
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(LuminaConverters::class)
@@ -30,10 +23,6 @@ abstract class LuminaDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: LuminaDatabase? = null
 
-        /**
-         * Singleton para obtener la base de datos.
-         * Asegura que no se abran múltiples archivos de base de datos a la vez.
-         */
         fun getDatabase(context: Context): LuminaDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
