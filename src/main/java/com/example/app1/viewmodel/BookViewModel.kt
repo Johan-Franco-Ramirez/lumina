@@ -10,6 +10,8 @@ import com.example.app1.data.database.ReadingStatus
 import com.example.app1.data.repository.BookRepository
 import com.example.app1.data.repository.GutendexRepository
 import com.example.app1.domain.model.Book
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,7 +43,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
     
     private val database = LuminaDatabase.getDatabase(application)
     private val repository = BookRepository(
-        apiService = OpenLibraryService.create(),
+        apiService = OpenLibraryService.create(application.cacheDir),
         libraryDao = database.libraryDao()
     )
     private val gutendexRepository = GutendexRepository(GutendexClient.service)
@@ -57,34 +59,36 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                // 1. Recomendados estáticos
-                val recommended = repository.getRecommendedBooks()
-                
-                // 2. Tendencias (Open Library)
-                val trending = repository.getTrendingBooks().take(15)
-                
-                // 3. Libros que el usuario está leyendo actualmente (Room)
-                val continueReading = repository.getLibraryBooks(ReadingStatus.READING).first().take(8)
-                
-                // 4. Clásicos gratuitos (Gutendex)
-                val freeClassics = gutendexRepository.fetchSpanishBooks().take(20)
+                coroutineScope {
+                    // Lanzamos todas las peticiones en paralelo
+                    val recommended = repository.getRecommendedBooks()
+                    
+                    val trendingDeferred = async { repository.getTrendingBooks() }
+                    val continueReadingDeferred = async { repository.getLibraryBooks(ReadingStatus.READING).first() }
+                    val freeClassicsDeferred = async { gutendexRepository.fetchSpanishBooks() }
+                    val mysteryDeferred = async { repository.searchBooks("mystery") }
+                    val adventureDeferred = async { repository.searchBooks("adventure") }
+                    val sciFiDeferred = async { repository.searchBooks("sci-fi") }
 
-                // 5. Categorías extra (Open Library)
-                val mystery = repository.searchBooks("mystery").take(15)
-                val adventure = repository.searchBooks("adventure").take(15)
-                val sciFi = repository.searchBooks("sci-fi").take(15)
-                
-                // 6. Selección dinámica para "Para ti" (Libro destacado del día)
-                val featured = (trending + freeClassics + mystery).shuffled().firstOrNull()
+                    // Esperamos los resultados (esto reduce el tiempo total al tiempo de la llamada más lenta)
+                    val trending = trendingDeferred.await().take(15)
+                    val continueReading = continueReadingDeferred.await().take(8)
+                    val freeClassics = freeClassicsDeferred.await().take(20)
+                    val mystery = mysteryDeferred.await().take(15)
+                    val adventure = adventureDeferred.await().take(15)
+                    val sciFi = sciFiDeferred.await().take(15)
+                    
+                    val featured = (trending + freeClassics + mystery).shuffled().firstOrNull()
 
-                _uiState.value = HomeUiState.Success(
-                    featuredBook = featured ?: recommended.firstOrNull(),
-                    trendingBooks = (recommended + trending).distinctBy { it.id },
-                    continueReading = continueReading,
-                    freeClassics = freeClassics,
-                    mysteryBooks = mystery,
-                    adventureBooks = adventure + sciFi
-                )
+                    _uiState.value = HomeUiState.Success(
+                        featuredBook = featured ?: recommended.firstOrNull(),
+                        trendingBooks = (recommended + trending).distinctBy { it.id },
+                        continueReading = continueReading,
+                        freeClassics = freeClassics,
+                        mysteryBooks = mystery,
+                        adventureBooks = adventure + sciFi
+                    )
+                }
             } catch (_: Exception) {
                 _uiState.value = HomeUiState.Error("No se pudo conectar a la Biblioteca de Alejandría.")
             }

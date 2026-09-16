@@ -26,7 +26,7 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val openLibraryService = OpenLibraryService.create()
+    private val openLibraryService = OpenLibraryService.create(application.cacheDir)
     private val gutendexService = GutendexClient.service
     
     private val _searchQuery = MutableStateFlow("")

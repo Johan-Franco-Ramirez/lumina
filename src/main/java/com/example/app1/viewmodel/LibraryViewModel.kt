@@ -20,7 +20,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     
     private val database = LuminaDatabase.getDatabase(application)
     private val repository = BookRepository(
-        apiService = OpenLibraryService.create(),
+        apiService = OpenLibraryService.create(application.cacheDir),
         libraryDao = database.libraryDao()
     )
 
