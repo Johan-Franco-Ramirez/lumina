@@ -18,7 +18,7 @@ import androidx.room.TypeConverters
  */
 @Database(
     entities = [BookEntity::class, LibraryBookEntity::class], 
-    version = 2,
+    version = 3, // Incrementado a 3 por la adición de BookType en la estructura de la tabla
     exportSchema = false
 )
 @TypeConverters(LuminaConverters::class)

@@ -1,5 +1,7 @@
+
 package com.example.app1
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,6 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.example.app1.ui.navigation.LuminaBottomBar
 import com.example.app1.ui.navigation.Screen
 import com.example.app1.ui.screens.BookDetailScreen
@@ -109,7 +112,13 @@ fun LuminaApp(settingsViewModel: SettingsViewModel) {
             
             composable(
                 route = Screen.BookDetail.route,
-                arguments = listOf(navArgument("bookId") { type = NavType.StringType })
+                arguments = listOf(navArgument("bookId") { type = NavType.StringType }),
+                deepLinks = listOf(
+                    navDeepLink {
+                        uriPattern = "lumina://book/{bookId}"
+                        action = Intent.ACTION_VIEW
+                    }
+                )
             ) { backStackEntry ->
                 val bookId = backStackEntry.arguments?.getString("bookId") ?: ""
                 BookDetailScreen(
