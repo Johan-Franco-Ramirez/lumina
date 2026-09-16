@@ -57,39 +57,78 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadHomeData() {
         viewModelScope.launch {
-            _uiState.value = HomeUiState.Loading
-            try {
-                coroutineScope {
-                    // Lanzamos todas las peticiones en paralelo
-                    val recommended = repository.getRecommendedBooks()
-                    
-                    val trendingDeferred = async { repository.getTrendingBooks() }
-                    val continueReadingDeferred = async { repository.getLibraryBooks(ReadingStatus.READING).first() }
-                    val freeClassicsDeferred = async { gutendexRepository.fetchSpanishBooks() }
-                    val mysteryDeferred = async { repository.searchBooks("mystery") }
-                    val adventureDeferred = async { repository.searchBooks("adventure") }
-                    val sciFiDeferred = async { repository.searchBooks("sci-fi") }
+            // Intentamos cargar caché primero para CARGA INSTANTÁNEA
+            loadFromCache()
+            
+            // Luego buscamos actualizaciones en la API
+            refreshFromApi()
+        }
+    }
 
-                    // Esperamos los resultados (esto reduce el tiempo total al tiempo de la llamada más lenta)
-                    val trending = trendingDeferred.await().take(15)
-                    val continueReading = continueReadingDeferred.await().take(8)
-                    val freeClassics = freeClassicsDeferred.await().take(20)
-                    val mystery = mysteryDeferred.await().take(15)
-                    val adventure = adventureDeferred.await().take(15)
-                    val sciFi = sciFiDeferred.await().take(15)
-                    
-                    val featured = (trending + freeClassics + mystery).shuffled().firstOrNull()
+    private suspend fun loadFromCache() {
+        try {
+            coroutineScope {
+                val trending = async { repository.getCachedBooks("trending") }
+                val mystery = async { repository.getCachedBooks("mystery") }
+                val adventure = async { repository.getCachedBooks("adventure") }
+                val free = async { repository.getCachedBooks("free") }
 
+                val cachedTrending = trending.await()
+                if (cachedTrending.isNotEmpty()) {
                     _uiState.value = HomeUiState.Success(
-                        featuredBook = featured ?: recommended.firstOrNull(),
-                        trendingBooks = (recommended + trending).distinctBy { it.id },
-                        continueReading = continueReading,
-                        freeClassics = freeClassics,
-                        mysteryBooks = mystery,
-                        adventureBooks = adventure + sciFi
+                        featuredBook = cachedTrending.shuffled().firstOrNull(),
+                        trendingBooks = cachedTrending,
+                        mysteryBooks = mystery.await(),
+                        adventureBooks = adventure.await(),
+                        freeClassics = free.await()
                     )
                 }
-            } catch (_: Exception) {
+            }
+        } catch (_: Exception) {}
+    }
+
+    private suspend fun refreshFromApi() {
+        try {
+            coroutineScope {
+                // Lanzamos todas las peticiones en paralelo
+                val recommended = repository.getRecommendedBooks()
+                
+                val trendingDeferred = async { repository.getTrendingBooks() }
+                val continueReadingDeferred = async { repository.getLibraryBooks(ReadingStatus.READING).first() }
+                val freeClassicsDeferred = async { gutendexRepository.fetchSpanishBooks() }
+                val mysteryDeferred = async { repository.searchBooks("mystery") }
+                val adventureDeferred = async { repository.searchBooks("adventure") }
+                val sciFiDeferred = async { repository.searchBooks("sci-fi") }
+
+                // Esperamos los resultados
+                val trending = trendingDeferred.await().take(15)
+                val continueReading = continueReadingDeferred.await().take(8)
+                val freeClassics = freeClassicsDeferred.await().take(20)
+                val mystery = mysteryDeferred.await().take(15)
+                val adventure = adventureDeferred.await().take(15)
+                val sciFi = sciFiDeferred.await().take(15)
+                
+                val allAdventure = (adventure + sciFi).distinctBy { it.id }
+                val featured = (trending + freeClassics + mystery).shuffled().firstOrNull()
+
+                // Actualizamos la UI con datos frescos
+                _uiState.value = HomeUiState.Success(
+                    featuredBook = featured ?: recommended.firstOrNull(),
+                    trendingBooks = (recommended + trending).distinctBy { it.id },
+                    continueReading = continueReading,
+                    freeClassics = freeClassics,
+                    mysteryBooks = mystery,
+                    adventureBooks = allAdventure
+                )
+
+                // Guardamos en caché para la próxima vez
+                repository.saveBooksToCache(trending, "trending")
+                repository.saveBooksToCache(mystery, "mystery")
+                repository.saveBooksToCache(allAdventure, "adventure")
+                repository.saveBooksToCache(freeClassics, "free")
+            }
+        } catch (_: Exception) {
+            if (_uiState.value is HomeUiState.Loading) {
                 _uiState.value = HomeUiState.Error("No se pudo conectar a la Biblioteca de Alejandría.")
             }
         }
