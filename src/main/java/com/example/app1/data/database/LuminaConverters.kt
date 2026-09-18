@@ -2,19 +2,12 @@ package com.example.app1.data.database
 
 import androidx.room.TypeConverter
 import com.example.app1.domain.model.BookOrigin
+import com.example.app1.domain.model.BookType
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
 /**
  * CONVERTIDORES DE TIPO (TypeConverters)
- * 
- * ¿Qué son?
- * Room solo sabe guardar tipos básicos (números, texto). No sabe guardar listas 
- * u objetos complejos.
- * 
- * ¿Para qué sirven?
- * Convierten esos tipos complejos en algo que SQLite entienda (como un texto JSON) 
- * y viceversa.
  */
 class LuminaConverters {
 
@@ -47,5 +40,19 @@ class LuminaConverters {
     @TypeConverter
     fun toReadingStatus(value: String): ReadingStatus {
         return ReadingStatus.valueOf(value)
+    }
+
+    @TypeConverter
+    fun fromBookType(type: BookType): String {
+        return type.name
+    }
+
+    @TypeConverter
+    fun toBookType(value: String): BookType {
+        return try {
+            BookType.valueOf(value)
+        } catch (e: Exception) {
+            BookType.LIBRO
+        }
     }
 }

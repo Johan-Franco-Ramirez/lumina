@@ -2,17 +2,6 @@ package com.example.app1.domain.model
 
 /**
  * MODELO DE DATOS CENTRAL - Book.kt
- * 
- * ¿Qué es?
- * Es una 'data class' que representa la entidad Libro en nuestra aplicación.
- * 
- * ¿Para qué sirve?
- * Es el objeto principal que viaja por toda la aplicación, desde la base de datos 
- * o la API hasta la pantalla del usuario.
- * 
- * ¿Por qué en la capa 'domain'?
- * Porque es un modelo "limpio". No depende de librerías externas (como Room o Retrofit).
- * Esto hace que nuestra lógica de negocio sea independiente de la tecnología.
  */
 data class Book(
     val id: String,
@@ -26,21 +15,26 @@ data class Book(
     val isIllustrated: Boolean,
     val rating: Double?,
     val origin: BookOrigin = BookOrigin.REMOTE,
+    val type: BookType = BookType.LIBRO, // Comic, Libro, Manga, Webtoon
     val pdfUri: String? = null, // Solo se llena si origin es PERSONAL_PDF
     val readUrl: String? = null  // URL para lectura online (Gutendex)
 )
 
 /**
+ * TIPO DE OBRA / LIBRO
+ */
+enum class BookType(val displayName: String) {
+    COMIC("Cómic"),
+    LIBRO("Libro"),
+    MANGA("Manga"),
+    WEBTOON("Webtoon")
+}
+
+/**
  * ORIGEN DEL LIBRO
- * 
- * ¿Qué es?
- * Un enumerado que define de dónde proviene la información.
- * 
- * Relación:
- * Permite que la UI muestre etiquetas diferentes (Catálogo vs Personal).
  */
 enum class BookOrigin {
-    REMOTE,       // Proviene de Google Books API
+    REMOTE,       // Proviene de Google Books / Open Library API
     PERSONAL_PDF, // Subido por el usuario
     GUTENDEX      // Proviene de Gutendex (Dominio Público)
 }

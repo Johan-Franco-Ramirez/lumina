@@ -65,7 +65,24 @@ fun BookDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) { Icon(Icons.Default.Share, null) }
+                    IconButton(onClick = {
+                        (uiState as? BookDetailUiState.Success)?.book?.let { book ->
+                            // Enlace profundo para abrir la app directamente en este libro
+                            val deepLink = "lumina://book/${book.id}"
+                            val shareMessage = "¡Mira este libro en Lumina!\n\n" +
+                                    "Título: ${book.title}\n" +
+                                    "Autor: ${book.author}\n\n" +
+                                    "Ábrelo en la app: $deepLink"
+
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, shareMessage)
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Compartir libro"))
+                        }
+                    }) {
+                        Icon(Icons.Default.Share, contentDescription = "Compartir")
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
@@ -113,6 +130,18 @@ fun BookDetailScreen(
                     // Título y Autor
                     Text(text = book.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     Text(text = "por ${book.author}", style = MaterialTheme.typography.titleMedium, fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.secondary)
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Tipo de obra en detalle (Cómic, Libro, Manga, Webtoon)
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text(book.type.displayName, fontWeight = FontWeight.Bold) },
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
 

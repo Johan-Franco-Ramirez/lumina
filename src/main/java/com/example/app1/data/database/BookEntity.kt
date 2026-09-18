@@ -4,16 +4,12 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.app1.domain.model.Book
 import com.example.app1.domain.model.BookOrigin
+import com.example.app1.domain.model.BookType
 
 /**
  * ENTIDAD DE LIBRO (BookEntity)
  * 
- * ¿Qué es?
- * Una clase que representa una tabla en la base de datos SQLite.
- * 
- * ¿Para qué sirve?
- * Almacena de forma permanente los datos de los libros que el usuario 
- * ha consultado o guardado, incluyendo metadatos de archivos PDF locales.
+ * Almacena de forma permanente los datos de los libros, cómics, mangas o webtoons.
  */
 @Entity(tableName = "books")
 data class BookEntity(
@@ -28,6 +24,7 @@ data class BookEntity(
     val isIllustrated: Boolean,
     val rating: Double?,
     val origin: BookOrigin,
+    val type: BookType = BookType.LIBRO,
     val pdfUri: String? = null,
     val readUrl: String? = null
 )
@@ -47,6 +44,7 @@ fun BookEntity.toDomain() = Book(
     isIllustrated = isIllustrated,
     rating = rating,
     origin = origin,
+    type = type,
     pdfUri = pdfUri,
     readUrl = readUrl
 )
@@ -66,6 +64,7 @@ fun Book.toEntity() = BookEntity(
     isIllustrated = isIllustrated,
     rating = rating,
     origin = origin,
+    type = type,
     pdfUri = pdfUri,
     readUrl = readUrl
 )
