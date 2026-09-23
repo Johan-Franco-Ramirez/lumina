@@ -21,6 +21,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.app1.domain.model.Book
 import com.example.app1.ui.components.BookCard
+import com.example.app1.ui.components.LuminaLoading
 import com.example.app1.viewmodel.SearchViewModel
 
 /**
@@ -178,9 +179,7 @@ fun SearchScreen(
                 when (val refreshState = pagingItems.loadState.refresh) {
                     is LoadState.Loading -> {
                         item {
-                            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator()
-                            }
+                            LuminaLoading(modifier = Modifier.height(200.dp))
                         }
                     }
                     is LoadState.Error -> {

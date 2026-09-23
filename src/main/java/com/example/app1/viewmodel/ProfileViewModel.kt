@@ -2,7 +2,6 @@ package com.example.app1.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import com.example.app1.data.api.OpenLibraryService
 import com.example.app1.data.database.LuminaDatabase
 import com.example.app1.data.database.ReadingStatus
 import com.example.app1.data.repository.BookRepository
@@ -23,7 +22,6 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
 
     private val database = LuminaDatabase.getDatabase(application)
     private val repository = BookRepository(
-        apiService = OpenLibraryService.create(),
         libraryDao = database.libraryDao(),
     )
 

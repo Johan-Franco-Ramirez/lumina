@@ -29,7 +29,8 @@ data class BookEntity(
     val rating: Double?,
     val origin: BookOrigin,
     val pdfUri: String? = null,
-    val readUrl: String? = null
+    val readUrl: String? = null,
+    val readerType: String? = null
 )
 
 /**
@@ -48,7 +49,8 @@ fun BookEntity.toDomain() = Book(
     rating = rating,
     origin = origin,
     pdfUri = pdfUri,
-    readUrl = readUrl
+    readUrl = readUrl,
+    readerType = readerType
 )
 
 /**
@@ -67,5 +69,6 @@ fun Book.toEntity() = BookEntity(
     rating = rating,
     origin = origin,
     pdfUri = pdfUri,
-    readUrl = readUrl
+    readUrl = readUrl,
+    readerType = readerType
 )

@@ -32,11 +32,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.app1.data.database.ReadingStatus
 import com.example.app1.domain.model.BookOrigin
+import com.example.app1.domain.model.BookSource
+import com.example.app1.domain.model.ReaderMode
 import com.example.app1.ui.components.AgeBadge
 import com.example.app1.ui.components.GenreChip
 import com.example.app1.ui.components.IllustratedBadge
+import com.example.app1.ui.components.LuminaLoading
 import com.example.app1.viewmodel.BookDetailUiState
 import com.example.app1.viewmodel.BookDetailViewModel
+import com.example.app1.viewmodel.ReaderViewModel
 
 /**
  * PANTALLA DE DETALLE DEL LIBRO (BookDetailScreen)
@@ -46,7 +50,9 @@ import com.example.app1.viewmodel.BookDetailViewModel
 fun BookDetailScreen(
     bookId: String,
     onBack: () -> Unit,
+    onNavigateToReader: () -> Unit,
     viewModel: BookDetailViewModel = viewModel(),
+    readerViewModel: ReaderViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -75,9 +81,7 @@ fun BookDetailScreen(
     ) { padding ->
         when (val state = uiState) {
             is BookDetailUiState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                LuminaLoading()
             }
             is BookDetailUiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -130,10 +134,31 @@ fun BookDetailScreen(
                     if (readingUrl != null) {
                         Button(
                             onClick = {
-                                // Al empezar a leer, lo movemos automáticamente a "Leyendo"
                                 viewModel.updateReadingStatus(book, ReadingStatus.READING)
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(readingUrl))
-                                context.startActivity(intent)
+                                
+                                if (book.origin == BookOrigin.PERSONAL_PDF && book.pdfUri != null) {
+                                    // Es un archivo local, usamos nuestro lector interno
+                                    val uri = Uri.parse(book.pdfUri)
+                                    val fileName = book.pdfUri.lowercase()
+                                    val initialMode = when (book.readerType) {
+                                        "LIBRO" -> if (fileName.contains(".pdf")) ReaderMode.PDF else ReaderMode.Webtoon
+                                        "COMIC" -> ReaderMode.ComicLTR
+                                        "MANGA" -> ReaderMode.MangaRTL
+                                        "WEBTOON" -> ReaderMode.Webtoon
+                                        else -> {
+                                            if (fileName.contains(".pdf")) ReaderMode.PDF 
+                                            else if (fileName.contains(".cbz") || fileName.contains(".zip") || fileName.contains(".cbr")) ReaderMode.ComicLTR
+                                            else ReaderMode.Webtoon
+                                        }
+                                    }
+                                    
+                                    readerViewModel.loadBook(BookSource.Local(uri), initialMode)
+                                    onNavigateToReader()
+                                } else {
+                                    // Es un enlace externo (Gutendex/Web), abrimos navegador
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(readingUrl))
+                                    context.startActivity(intent)
+                                }
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(

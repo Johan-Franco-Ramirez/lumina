@@ -3,7 +3,6 @@ package com.example.app1.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app1.data.api.OpenLibraryService
 import com.example.app1.data.api.GutendexClient
 import com.example.app1.data.database.LuminaDatabase
 import com.example.app1.data.database.ReadingStatus
@@ -12,6 +11,7 @@ import com.example.app1.data.repository.GutendexRepository
 import com.example.app1.domain.model.Book
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,7 +43,6 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
     
     private val database = LuminaDatabase.getDatabase(application)
     private val repository = BookRepository(
-        apiService = OpenLibraryService.create(application.cacheDir),
         libraryDao = database.libraryDao()
     )
     private val gutendexRepository = GutendexRepository(GutendexClient.service)
@@ -57,6 +56,9 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadHomeData() {
         viewModelScope.launch {
+            // Añadimos un retraso artificial de 3 segundos para apreciar la pantalla de carga de inicio
+            delay(3000)
+            
             // Intentamos cargar caché primero para CARGA INSTANTÁNEA
             loadFromCache()
             
@@ -89,29 +91,30 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun refreshFromApi() {
         try {
-            coroutineScope {
-                // Lanzamos todas las peticiones en paralelo
-                val recommended = repository.getRecommendedBooks()
-                
-                val trendingDeferred = async { repository.getTrendingBooks() }
-                val continueReadingDeferred = async { repository.getLibraryBooks(ReadingStatus.READING).first() }
-                val freeClassicsDeferred = async { gutendexRepository.fetchSpanishBooks() }
-                val mysteryDeferred = async { repository.searchBooks("mystery") }
-                val adventureDeferred = async { repository.searchBooks("adventure") }
-                val sciFiDeferred = async { repository.searchBooks("sci-fi") }
+            // Recomendados estáticos (siempre disponibles)
+            val recommended = repository.getRecommendedBooks()
 
-                // Esperamos los resultados
-                val trending = trendingDeferred.await().take(15)
-                val continueReading = continueReadingDeferred.await().take(8)
-                val freeClassics = freeClassicsDeferred.await().take(20)
-                val mystery = mysteryDeferred.await().take(15)
-                val adventure = adventureDeferred.await().take(15)
-                val sciFi = sciFiDeferred.await().take(15)
+            coroutineScope {
+                // Lanzamos peticiones en paralelo con manejo de errores individual para cada una
+                val trendingDeferred = async { safeApiCall { repository.getTrendingBooks() } }
+                val continueReadingDeferred = async { safeApiCall { repository.getLibraryBooks(ReadingStatus.READING).first() } }
+                val freeClassicsDeferred = async { safeApiCall { gutendexRepository.fetchSpanishBooks() } }
+                val mysteryDeferred = async { safeApiCall { repository.searchBooks("mystery") } }
+                val adventureDeferred = async { safeApiCall { repository.searchBooks("adventure") } }
+                val sciFiDeferred = async { safeApiCall { repository.searchBooks("sci-fi") } }
+
+                // Esperamos los resultados (si fallan, devuelven lista vacía gracias a safeApiCall)
+                val trending = trendingDeferred.await() ?: emptyList()
+                val continueReading = continueReadingDeferred.await() ?: emptyList()
+                val freeClassics = freeClassicsDeferred.await() ?: emptyList()
+                val mystery = mysteryDeferred.await() ?: emptyList()
+                val adventure = adventureDeferred.await() ?: emptyList()
+                val sciFi = sciFiDeferred.await() ?: emptyList()
                 
                 val allAdventure = (adventure + sciFi).distinctBy { it.id }
                 val featured = (trending + freeClassics + mystery).shuffled().firstOrNull()
 
-                // Actualizamos la UI con datos frescos
+                // Actualizamos la UI
                 _uiState.value = HomeUiState.Success(
                     featuredBook = featured ?: recommended.firstOrNull(),
                     trendingBooks = (recommended + trending).distinctBy { it.id },
@@ -121,16 +124,27 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
                     adventureBooks = allAdventure
                 )
 
-                // Guardamos en caché para la próxima vez
-                repository.saveBooksToCache(trending, "trending")
-                repository.saveBooksToCache(mystery, "mystery")
-                repository.saveBooksToCache(allAdventure, "adventure")
-                repository.saveBooksToCache(freeClassics, "free")
+                // Guardamos en caché SOLO lo que realmente se descargó
+                if (trending.isNotEmpty()) repository.saveBooksToCache(trending, "trending")
+                if (mystery.isNotEmpty()) repository.saveBooksToCache(mystery, "mystery")
+                if (allAdventure.isNotEmpty()) repository.saveBooksToCache(allAdventure, "adventure")
+                if (freeClassics.isNotEmpty()) repository.saveBooksToCache(freeClassics, "free")
             }
-        } catch (_: Exception) {
-            if (_uiState.value is HomeUiState.Loading) {
-                _uiState.value = HomeUiState.Error("No se pudo conectar a la Biblioteca de Alejandría.")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Si falló todo y no hay nada en pantalla, mostramos error
+            if (_uiState.value !is HomeUiState.Success) {
+                _uiState.value = HomeUiState.Error("No se pudo conectar a la Biblioteca. Verifica tu internet.")
             }
+        }
+    }
+
+    private suspend fun <T> safeApiCall(block: suspend () -> T): T? {
+        return try {
+            block()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 }

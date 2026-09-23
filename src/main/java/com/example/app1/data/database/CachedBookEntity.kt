@@ -21,6 +21,7 @@ data class CachedBookEntity(
     val targetAudience: String,
     val origin: BookOrigin,
     val readUrl: String?,
+    val readerType: String?,
     val timestamp: Long = System.currentTimeMillis()
 )
 
@@ -36,7 +37,8 @@ fun CachedBookEntity.toDomain() = Book(
     isIllustrated = false,
     rating = null,
     origin = origin,
-    readUrl = readUrl
+    readUrl = readUrl,
+    readerType = readerType
 )
 
 fun Book.toCachedEntity(category: String) = CachedBookEntity(
@@ -49,5 +51,6 @@ fun Book.toCachedEntity(category: String) = CachedBookEntity(
     genres = genres,
     targetAudience = targetAudience,
     origin = origin,
-    readUrl = readUrl
+    readUrl = readUrl,
+    readerType = readerType
 )

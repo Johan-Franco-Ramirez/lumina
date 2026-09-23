@@ -11,6 +11,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class ReaderVisualTheme {
     LIGHT, DARK, SEPIA
@@ -32,17 +36,35 @@ class ReaderViewModel(
     private val _uiState = MutableStateFlow(ReaderUiState())
     val uiState: StateFlow<ReaderUiState> = _uiState.asStateFlow()
 
+    private val loadMutex = Mutex()
+
     fun loadBook(source: BookSource, initialMode: ReaderMode) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, currentMode = initialMode, pages = emptyList(), currentPageIndex = 0) }
+            // Añadimos un retraso deliberado de 3 segundos para apreciar la carga del archivo
+            delay(1500.milliseconds)
 
-            repository.loadBookPages(source).collect { loadedPages ->
+            // Evitamos que dos cargas se ejecuten al mismo tiempo
+            loadMutex.withLock {
                 _uiState.update {
                     it.copy(
-                        pages = loadedPages,
-                        isLoading = false,
-                        errorMessage = if (loadedPages.isEmpty()) "No se pudieron cargar las páginas" else null
+                        isLoading = true,
+                        currentMode = initialMode,
+                        pages = emptyList(),
+                        currentPageIndex = 0,
+                        errorMessage = null
                     )
+                }
+
+                repository.loadBookPages(source).collect { loadedPages ->
+                    _uiState.update {
+                        it.copy(
+                            pages = loadedPages,
+                            isLoading = false,
+                            errorMessage = if (loadedPages.isEmpty()) {
+                                "No se encontraron imágenes compatibles. Si es un archivo .cbr, asegúrate de que sea formato ZIP y no RAR."
+                            } else null
+                        )
+                    }
                 }
             }
         }

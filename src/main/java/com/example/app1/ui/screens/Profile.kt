@@ -48,7 +48,7 @@ fun ProfileScreen(
     ) { padding ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(24.dp),
@@ -158,8 +158,6 @@ fun ProfileScreen(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             Text(
                 text = "Nuestra misión es iluminar el camino del conocimiento, " +
                         "haciendo que la lectura sea accesible y organizada para todos.",
@@ -168,7 +166,7 @@ fun ProfileScreen(
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 text = "CREADORES",
@@ -189,6 +187,8 @@ fun ProfileScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.outline
             )
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

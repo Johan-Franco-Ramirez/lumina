@@ -3,7 +3,6 @@ package com.example.app1.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app1.data.api.OpenLibraryService
 import com.example.app1.data.api.GutendexClient
 import com.example.app1.data.database.LuminaDatabase
 import com.example.app1.data.database.ReadingStatus
@@ -33,7 +32,6 @@ sealed class BookDetailUiState {
 class BookDetailViewModel(application: Application) : AndroidViewModel(application) {
     private val database = LuminaDatabase.getDatabase(application)
     private val repository = BookRepository(
-        apiService = OpenLibraryService.create(application.cacheDir),
         libraryDao = database.libraryDao()
     )
     private val gutendexRepository = GutendexRepository(GutendexClient.service)
@@ -60,11 +58,6 @@ class BookDetailViewModel(application: Application) : AndroidViewModel(applicati
             // 3. Si sigue siendo null, verificar si es uno de los recomendados estáticos
             if (book == null) {
                 book = repository.getRecommendedBooks().find { it.id == bookId }
-            }
-
-            // 4. Por último, intentar buscar en la API de Open Library
-            if (book == null && !bookId.startsWith("GUTEN_")) {
-                book = repository.getBookById(bookId)
             }
 
             val status = repository.getBookLibraryStatus(bookId)

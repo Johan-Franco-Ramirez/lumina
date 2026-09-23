@@ -27,7 +27,8 @@ data class Book(
     val rating: Double?,
     val origin: BookOrigin = BookOrigin.REMOTE,
     val pdfUri: String? = null, // Solo se llena si origin es PERSONAL_PDF
-    val readUrl: String? = null  // URL para lectura online (Gutendex)
+    val readUrl: String? = null, // URL para lectura online (Gutendex)
+    val readerType: String? = null // NUEVO: "LIBRO", "MANGA", "COMIC", "WEBTOON"
 )
 
 /**

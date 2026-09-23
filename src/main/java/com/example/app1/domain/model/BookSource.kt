@@ -3,9 +3,12 @@ package com.example.app1.domain.model
 import android.net.Uri
 
 sealed class BookSource {
-    // Para archivos locales o subidos propios (Usa la Uri segura de Android SAF)
+    // Para un solo archivo local
     data class Local(val uri: Uri) : BookSource()
 
-    // Para archivos públicos de internet (URL de descarga o streaming)
+    // Para una colección de archivos (Carpetas o Series)
+    data class Collection(val uris: List<Uri>) : BookSource()
+
+    // Para archivos públicos de internet
     data class Remote(val url: String, val isStreaming: Boolean = false) : BookSource()
 }

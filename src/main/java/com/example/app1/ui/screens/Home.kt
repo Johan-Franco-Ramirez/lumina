@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.app1.domain.model.Book
 import com.example.app1.ui.components.BookCard
 import com.example.app1.ui.components.FeaturedBook
+import com.example.app1.ui.components.LuminaLoading
 import com.example.app1.viewmodel.BookViewModel
 import com.example.app1.viewmodel.HomeUiState
 
@@ -54,9 +55,7 @@ fun HomeScreen(
     ) { padding ->
         when (val state = uiState) {
             is HomeUiState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                LuminaLoading()
             }
             is HomeUiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
