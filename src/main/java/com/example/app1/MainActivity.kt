@@ -1,7 +1,7 @@
-
 package com.example.app1
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,17 +9,21 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import com.example.app1.domain.model.BookSource
+import com.example.app1.domain.model.ReaderMode
 import com.example.app1.ui.navigation.LuminaBottomBar
 import com.example.app1.ui.navigation.Screen
 import com.example.app1.ui.screens.BookDetailScreen
@@ -41,14 +45,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            // Obtenemos el ViewModel de configuración para el tema
             val settingsViewModel: SettingsViewModel = viewModel()
             val isDarkTheme by settingsViewModel.isDarkTheme.collectAsState()
 
             LuminaTheme(darkTheme = isDarkTheme) {
-                LuminaApp(settingsViewModel)
+                LuminaApp(settingsViewModel, intent)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
     }
 }
 
@@ -56,7 +64,7 @@ class MainActivity : ComponentActivity() {
  * LUMINA APP - Orquestador de Navegación
  */
 @Composable
-fun LuminaApp(settingsViewModel: SettingsViewModel) {
+fun LuminaApp(settingsViewModel: SettingsViewModel, intent: Intent) {
     val navController = rememberNavController()
     val isDarkTheme by settingsViewModel.isDarkTheme.collectAsState()
     val context = LocalContext.current
@@ -64,6 +72,11 @@ fun LuminaApp(settingsViewModel: SettingsViewModel) {
     val readerViewModel: ReaderViewModel = viewModel(
         factory = ReaderViewModelFactory(context),
     )
+
+    // Manejar el Intent de apertura de PDF
+    LaunchedEffect(intent) {
+        handleIntent(intent, navController, readerViewModel)
+    }
 
     Scaffold(
         bottomBar = { LuminaBottomBar(navController) },
@@ -125,6 +138,20 @@ fun LuminaApp(settingsViewModel: SettingsViewModel) {
                     bookId = bookId,
                     onBack = { navController.popBackStack() }
                 )
+            }
+        }
+    }
+}
+
+private fun handleIntent(intent: Intent, navController: NavHostController, viewModel: ReaderViewModel) {
+    if (intent.action == Intent.ACTION_VIEW) {
+        val data: Uri? = intent.data
+        val type: String? = intent.type
+        
+        if (data != null && type == "application/pdf") {
+            viewModel.loadBook(BookSource.Local(data), ReaderMode.ComicLTR)
+            navController.navigate(Screen.Reader.route) {
+                launchSingleTop = true
             }
         }
     }

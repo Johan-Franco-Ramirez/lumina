@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.app1.domain.model.Book
 import com.example.app1.domain.model.BookOrigin
+import com.example.app1.domain.model.BookType
 
 /**
  * ENTIDAD PARA CACHÉ (Carga Instantánea)
@@ -19,7 +20,11 @@ data class CachedBookEntity(
     val coverUrl: String?,
     val genres: List<String>,
     val targetAudience: String,
+    val ageRange: String,
+    val isIllustrated: Boolean,
+    val rating: Double?,
     val origin: BookOrigin,
+    val type: BookType,
     val readUrl: String?,
     val timestamp: Long = System.currentTimeMillis()
 )
@@ -32,10 +37,11 @@ fun CachedBookEntity.toDomain() = Book(
     coverUrl = coverUrl,
     genres = genres,
     targetAudience = targetAudience,
-    ageRange = "No especificada",
-    isIllustrated = false,
-    rating = null,
+    ageRange = ageRange,
+    isIllustrated = isIllustrated,
+    rating = rating,
     origin = origin,
+    type = type,
     readUrl = readUrl
 )
 
@@ -48,6 +54,10 @@ fun Book.toCachedEntity(category: String) = CachedBookEntity(
     coverUrl = coverUrl,
     genres = genres,
     targetAudience = targetAudience,
+    ageRange = ageRange,
+    isIllustrated = isIllustrated,
+    rating = rating,
     origin = origin,
+    type = type,
     readUrl = readUrl
 )

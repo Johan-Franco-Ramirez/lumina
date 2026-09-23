@@ -11,7 +11,7 @@ import androidx.room.TypeConverters
  */
 @Database(
     entities = [BookEntity::class, LibraryBookEntity::class, CachedBookEntity::class], 
-    version = 3,
+    version = 4, // Incrementado a 4 para forzar la migración tras el merge y cambios de esquema
     exportSchema = false
 )
 @TypeConverters(LuminaConverters::class)

@@ -17,7 +17,8 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Lumina"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -30,6 +31,16 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <!-- URI: lumina://book/{bookId} -->
                 <data android:scheme="lumina" android:host="book" />
+            </intent-filter>
+
+            <!-- Intent Filter para abrir archivos PDF directamente -->
+            <intent-filter android:label="Abrir PDF en Lumina">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
     </application>
