@@ -32,6 +32,25 @@
 
 ---
 
+## 📖 Funcionamiento Técnico del Lector de PDFs
+
+El módulo del lector de PDF está diseñado siguiendo una arquitectura reactiva dividida en tres capas principales:
+
+### 1. Capa de Datos (`ReaderRepositoryImpl.kt`)
+Se utiliza la API nativa del sistema operativo Android (`android.graphics.pdf.PdfRenderer`) para acceder de manera directa al almacenamiento interno o externo:
+- A través de `ParcelFileDescriptor.open()` se abre el archivo PDF local en modo lectura.
+- Con `PdfRenderer`, cada página del documento se decodifica y dibuja individualmente sobre un `Bitmap` de alta resolución en modo `RENDER_MODE_FOR_DISPLAY`.
+- Se implementa gestión explícita de memoria liberando recursos (`page.close()` y `fileDescriptor.close()`) para prevenir fugas de memoria o fallos `OutOfMemoryError`.
+
+### 2. Capa de Lógica & Estado (`ReaderViewModel.kt`)
+- La conversión e interpretación pesada del archivo PDF se ejecuta en hilos secundarios desacoplados del hilo principal mediante corrutinas de Kotlin en `viewModelScope` con `Dispatchers.IO`.
+- Mantiene y emite el estado del lector mediante un `StateFlow<ReaderUiState>` reactivo, gestionando la página actual, el total de páginas y la persistencia automática del progreso de lectura.
+
+### 3. Capa de Interfaz (`ReaderScreen.kt`)
+- Construida íntegramente con **Jetpack Compose**.
+- Transforma los objetos `Bitmap` procesados a un `ImageBitmap` dibujable nativamente por Compose mediante `.asImageBitmap()`.
+- Incorpora soporte para gestos táctiles avanzadas (pizcar para zoom, pan/desplazamiento) utilizando transformadores de puntero (`pointerInput` y `detectTransformGestures`).
+
 ## 🏗️ Estructura del Proyecto
 
 ```text
@@ -71,7 +90,7 @@ com.example.app1
 - **Detalle**: Sinopsis completa, autor y opciones de lectura directa.
 
 ---
-*Desarrollado con ❤️ por Lumina Team.*
+*Desarrollado con ❤️ por Lumina Group.*
 
 - Johan Franco Ramirez 
 - Jhon Harold Sanchez
