@@ -1,23 +1,20 @@
-# Add project specific ProGuard rules here.
-# By default, the flags in this file are appended to flags specified
-# in C:\Users\harol\AppData\Local\Android\Sdk/tools/proguard/proguard-android.txt
-# You can edit the include path and order by changing the proguardFiles
-# directive in build.gradle.kts.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Reglas específicas del proyecto Lumina
+# Estas reglas protegen el código de ser borrado o renombrado por error durante la compilación final.
 
-# Add any project specific keep rules here:
+# --- Modelos de Datos (DTOs) ---
+# Es CRÍTICO mantener los nombres de los campos para que GSON y Retrofit funcionen.
+-keepclassmembers class com.example.app1.data.model.** { *; }
+-keepclassmembers class com.example.app1.domain.model.** { *; }
 
-# Retrofit
--keep class retrofit2.** { *; }
--dontwarn retrofit2.**
--keepattributes Signature, Exceptions
+# --- Retrofit & OkHttp ---
+-keepattributes Signature, Exceptions, InnerClasses
+-dontwarn okio.**
+-dontwarn javax.annotation.**
+-dontwarn kotlin.Unit
 
-# Gson
--keep class com.google.gson.** { *; }
--dontwarn com.google.gson.**
-
-# Room
+# --- Room ---
 -keep class androidx.room.RoomDatabase { *; }
 -dontwarn androidx.room.**
+
+# --- Firebase ---
+-dontwarn com.google.firebase.**

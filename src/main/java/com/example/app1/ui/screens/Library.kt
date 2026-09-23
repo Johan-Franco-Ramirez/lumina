@@ -1,6 +1,7 @@
 package com.example.app1.ui.screens
 
 import android.net.Uri
+import android.os.Environment
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -13,17 +14,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.app1.domain.model.Book
 import com.example.app1.domain.model.BookSource
 import com.example.app1.domain.model.ReaderMode
 import com.example.app1.ui.components.BookCard
 import com.example.app1.ui.components.ImportBookDialog
+import com.example.app1.ui.components.LuminaLoading
+import com.example.app1.util.LuminaOrganizer
 import com.example.app1.viewmodel.LibraryViewModel
 import com.example.app1.viewmodel.ReaderViewModel
+import java.io.File
 
 /**
  * PANTALLA: MI BIBLIOTECA (LibraryScreen)
@@ -61,8 +67,8 @@ fun LibraryScreen(
         ImportBookDialog(
             pdfUri = selectedPdfUri.toString(),
             onDismiss = { showImportDialog = false },
-            onConfirm = { title, author, desc ->
-                viewModel.importPersonalBook(title, author, desc, selectedPdfUri.toString())
+            onConfirm = { title, author, desc, readerType ->
+                viewModel.importPersonalBook(title, author, desc, selectedPdfUri.toString(), readerType)
                 showImportDialog = false
             }
         )
@@ -100,11 +106,20 @@ fun LibraryScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { filePickerLauncher.launch(arrayOf("application/pdf")) },
+                onClick = { 
+                    filePickerLauncher.launch(arrayOf(
+                        "application/pdf", 
+                        "application/zip", 
+                        "application/octet-stream",
+                        "application/x-cbz",
+                        "application/x-cbr",
+                        "image/*"
+                    )) 
+                },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Importar PDF")
+                Icon(Icons.Default.Add, contentDescription = "Importar Archivo")
             }
         }
     ) { padding ->
@@ -145,16 +160,43 @@ fun LocalReaderSection(
     readerViewModel: ReaderViewModel,
     onNavigateToReader: () -> Unit
 ) {
+    val context = LocalContext.current
+    val organizer = remember { LuminaOrganizer(context) }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri: Uri? ->
             uri?.let { safeUri ->
                 val fileName = safeUri.toString().lowercase()
-                val initialMode = if (fileName.contains(".pdf")) ReaderMode.PDF else ReaderMode.ComicLTR
+                val initialMode = when {
+                    fileName.contains(".pdf") -> ReaderMode.PDF
+                    fileName.contains(".cbz") || fileName.contains(".zip") || fileName.contains(".cbr") -> ReaderMode.ComicLTR
+                    else -> ReaderMode.Webtoon
+                }
                 readerViewModel.loadBook(source = BookSource.Local(safeUri), initialMode = initialMode)
                 onNavigateToReader()
             }
         },
+    )
+
+    // Lanzador para seleccionar CARPETAS completas para LECTURA
+    val folderReaderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree(),
+        onResult = { uri: Uri? ->
+            uri?.let { folderUri ->
+                val rootDoc = DocumentFile.fromTreeUri(context, folderUri)
+                val files = rootDoc?.listFiles()?.filter { doc ->
+                    val name = doc.name?.lowercase() ?: ""
+                    name.endsWith(".cbz") || name.endsWith(".zip") || name.endsWith(".cbr") || 
+                    name.endsWith(".jpg") || name.endsWith(".png") || name.endsWith(".webp")
+                }?.map { it.uri }
+
+                if (!files.isNullOrEmpty()) {
+                    readerViewModel.loadBook(BookSource.Collection(files), ReaderMode.ComicLTR)
+                    onNavigateToReader()
+                }
+            }
+        }
     )
 
     Box(
@@ -172,10 +214,25 @@ fun LocalReaderSection(
             )
             Button(
                 onClick = { 
-                    filePickerLauncher.launch(arrayOf("application/pdf", "application/zip", "application/x-cbz"))
+                    filePickerLauncher.launch(arrayOf(
+                        "application/pdf", 
+                        "application/zip", 
+                        "application/octet-stream", // Para archivos sin tipo claro
+                        "application/x-cbz",
+                        "application/x-cbr",
+                        "image/*" // Acepta todas las imágenes
+                    ))
                 }
             ) {
                 Text("Subir y Leer Archivo Local")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = { folderReaderLauncher.launch(null) }
+            ) {
+                Text("Leer Carpeta Completa (.cbr/.cbz)")
             }
         }
     }

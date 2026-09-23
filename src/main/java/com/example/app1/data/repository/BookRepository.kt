@@ -1,7 +1,5 @@
 package com.example.app1.data.repository
 
-import com.example.app1.data.api.OpenLibraryService
-import com.example.app1.data.database.CachedBookEntity
 import com.example.app1.data.database.LibraryBookEntity
 import com.example.app1.data.database.LibraryDao
 import com.example.app1.data.database.ReadingStatus
@@ -17,7 +15,6 @@ import kotlinx.coroutines.flow.map
  * REPOSITORIO DE LIBROS (BookRepository)
  */
 class BookRepository(
-    private val apiService: OpenLibraryService,
     private val libraryDao: LibraryDao,
 ) {
 
@@ -68,46 +65,18 @@ class BookRepository(
     }
 
     suspend fun getTrendingBooks(): List<Book> {
-        return try {
-            val response = apiService.searchBooks("trending", limit = 15)
-            response.docs.map { it.toDomain() }
-        } catch (_: Exception) {
-            emptyList()
-        }
+        // OpenLibrary desactivada temporalmente
+        return emptyList()
     }
 
     suspend fun getBookById(id: String): Book? {
-        return try {
-            val cleanId = id.removePrefix("OPEN_")
-            val work = apiService.getWorkDetail(cleanId)
-            val coverUrl = work.covers?.firstOrNull()?.let { "https://covers.openlibrary.org/b/id/$it-L.jpg" }
-            
-            Book(
-                id = "OPEN_$cleanId",
-                title = work.title,
-                author = "Consultando autor...", 
-                description = work.getDescriptionText(),
-                coverUrl = coverUrl,
-                genres = listOf("General"),
-                targetAudience = "Público General",
-                ageRange = "No especificada",
-                isIllustrated = false,
-                rating = null,
-                origin = BookOrigin.REMOTE,
-                readUrl = "https://openlibrary.org${work.key}"
-            )
-        } catch (_: Exception) {
-            null
-        }
+        // Solo buscamos en local por ahora para evitar conflictos con OpenLibrary
+        return getLocalBookById(id)
     }
 
     suspend fun searchBooks(query: String): List<Book> {
-        return try {
-            val response = apiService.searchBooks(query, limit = 15)
-            response.docs.map { it.toDomain() }
-        } catch (_: Exception) {
-            emptyList()
-        }
+        // OpenLibrary desactivada temporalmente
+        return emptyList()
     }
 
     // --- FUENTE DE DATOS: ROOM (LOCAL) ---

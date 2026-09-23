@@ -7,7 +7,6 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.example.app1.data.api.OpenLibraryService
 import com.example.app1.data.api.GutendexClient
 import com.example.app1.data.paging.CombinedBooksPagingSource
 import com.example.app1.domain.model.Book
@@ -26,7 +25,6 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val openLibraryService = OpenLibraryService.create(application.cacheDir)
     private val gutendexService = GutendexClient.service
     
     private val _searchQuery = MutableStateFlow("")
@@ -75,7 +73,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 if (illustrated) append("illustrated")
             }.trim()
             
-            CombinedBooksPagingSource(openLibraryService, gutendexService, query, combinedFilter) 
+            CombinedBooksPagingSource(gutendexService, query, combinedFilter) 
         }
     ).flow
 

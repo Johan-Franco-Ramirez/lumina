@@ -123,7 +123,11 @@ fun LuminaApp(settingsViewModel: SettingsViewModel) {
                 val bookId = backStackEntry.arguments?.getString("bookId") ?: ""
                 BookDetailScreen(
                     bookId = bookId,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onNavigateToReader = {
+                        navController.navigate(Screen.Reader.route)
+                    },
+                    readerViewModel = readerViewModel
                 )
             }
         }

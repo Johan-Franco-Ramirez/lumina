@@ -7,9 +7,9 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,20 +20,12 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.app1.domain.model.ReaderMode
+import com.example.app1.ui.components.LuminaLoading
 import com.example.app1.viewmodel.ReaderViewModel
 import com.example.app1.viewmodel.ReaderVisualTheme
-
-@Preview
-@Composable
-fun ReaderScreenPreview() {
-    Surface(color = Color.Black) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Vista Previa del Lector", color = Color.White)
-        }
-    }
-}
+import net.engawapg.lib.zoomable.rememberZoomState
+import net.engawapg.lib.zoomable.zoomable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,23 +35,20 @@ fun ReaderScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
-    // Configuración de Colores según el Tema Visual
     val backgroundColor = when (uiState.visualTheme) {
         ReaderVisualTheme.LIGHT -> Color.White
         ReaderVisualTheme.DARK -> Color.Black
-        ReaderVisualTheme.SEPIA -> Color(0xFFF4ECD8) // Color Papiro real
+        ReaderVisualTheme.SEPIA -> Color(0xFFF4ECD8)
     }
 
     val contentColor = when (uiState.visualTheme) {
         ReaderVisualTheme.LIGHT -> Color.Black
         ReaderVisualTheme.DARK -> Color.White
-        ReaderVisualTheme.SEPIA -> Color(0xFF5B4636) // Marrón tinta antigua
+        ReaderVisualTheme.SEPIA -> Color(0xFF5B4636)
     }
 
-    // Definición de Filtros de Color (Matrices)
     val colorFilter = when (uiState.visualTheme) {
         ReaderVisualTheme.SEPIA -> {
-            // Matriz para efecto Sepia/Papiro
             val sepiaMatrix = ColorMatrix(floatArrayOf(
                 0.393f, 0.769f, 0.189f, 0f, 0f,
                 0.349f, 0.686f, 0.168f, 0f, 0f,
@@ -69,7 +58,6 @@ fun ReaderScreen(
             ColorFilter.colorMatrix(sepiaMatrix)
         }
         ReaderVisualTheme.DARK -> {
-            // Inversión de colores para modo noche cómodo
             val invertMatrix = ColorMatrix(floatArrayOf(
                 -1f,  0f,  0f, 0f, 255f,
                  0f, -1f,  0f, 0f, 255f,
@@ -91,27 +79,14 @@ fun ReaderScreen(
                     }
                 },
                 actions = {
-                    // Controles de Tema en la barra superior
                     IconButton(onClick = { viewModel.changeVisualTheme(ReaderVisualTheme.LIGHT) }) {
-                        Icon(
-                            Icons.Default.LightMode, 
-                            contentDescription = "Claro",
-                            tint = if (uiState.visualTheme == ReaderVisualTheme.LIGHT) MaterialTheme.colorScheme.primary else contentColor
-                        )
+                        Icon(Icons.Default.LightMode, "Claro", tint = if (uiState.visualTheme == ReaderVisualTheme.LIGHT) MaterialTheme.colorScheme.primary else contentColor)
                     }
                     IconButton(onClick = { viewModel.changeVisualTheme(ReaderVisualTheme.SEPIA) }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.MenuBook, 
-                            contentDescription = "Papiro",
-                            tint = if (uiState.visualTheme == ReaderVisualTheme.SEPIA) MaterialTheme.colorScheme.primary else contentColor
-                        )
+                        Icon(Icons.AutoMirrored.Filled.MenuBook, "Papiro", tint = if (uiState.visualTheme == ReaderVisualTheme.SEPIA) MaterialTheme.colorScheme.primary else contentColor)
                     }
                     IconButton(onClick = { viewModel.changeVisualTheme(ReaderVisualTheme.DARK) }) {
-                        Icon(
-                            Icons.Default.DarkMode, 
-                            contentDescription = "Noche",
-                            tint = if (uiState.visualTheme == ReaderVisualTheme.DARK) MaterialTheme.colorScheme.primary else contentColor
-                        )
+                        Icon(Icons.Default.DarkMode, "Noche", tint = if (uiState.visualTheme == ReaderVisualTheme.DARK) MaterialTheme.colorScheme.primary else contentColor)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -123,18 +98,11 @@ fun ReaderScreen(
         },
         containerColor = backgroundColor
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
             if (uiState.isLoading) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                LuminaLoading(useLinear = true)
             } else if (uiState.pages.isNotEmpty()) {
-                val pagerState = rememberPagerState(
-                    initialPage = uiState.currentPageIndex
-                ) { uiState.pages.size }
+                val pagerState = rememberPagerState(initialPage = uiState.currentPageIndex) { uiState.pages.size }
 
                 LaunchedEffect(pagerState.currentPage) {
                     viewModel.updateCurrentPage(pagerState.currentPage)
@@ -142,31 +110,24 @@ fun ReaderScreen(
 
                 when (uiState.currentMode) {
                     ReaderMode.Webtoon -> {
-                        VerticalPager(
-                            state = pagerState,
-                            modifier = Modifier.fillMaxSize(),
-                            key = { it }
-                        ) { pageIndex ->
+                        VerticalPager(state = pagerState, modifier = Modifier.fillMaxSize(), key = { it }) { pageIndex ->
+                            val zoomState = rememberZoomState()
                             Image(
                                 bitmap = uiState.pages[pageIndex].asImageBitmap(),
-                                contentDescription = "Página ${pageIndex + 1}",
-                                modifier = Modifier.fillMaxWidth(),
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxWidth().zoomable(zoomState),
                                 contentScale = ContentScale.FillWidth,
                                 colorFilter = colorFilter
                             )
                         }
                     }
                     else -> {
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier.fillMaxSize(),
-                            key = { it },
-                            reverseLayout = uiState.currentMode == ReaderMode.MangaRTL
-                        ) { pageIndex ->
+                        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize(), key = { it }, reverseLayout = uiState.currentMode == ReaderMode.MangaRTL) { pageIndex ->
+                            val zoomState = rememberZoomState()
                             Image(
                                 bitmap = uiState.pages[pageIndex].asImageBitmap(),
-                                contentDescription = "Página ${pageIndex + 1}",
-                                modifier = Modifier.fillMaxSize(),
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize().zoomable(zoomState),
                                 contentScale = ContentScale.Fit,
                                 colorFilter = colorFilter
                             )
@@ -174,16 +135,7 @@ fun ReaderScreen(
                     }
                 }
             } else if (uiState.errorMessage != null) {
-                Text(
-                    text = uiState.errorMessage ?: "Error desconocido",
-                    color = contentColor,
-                    modifier = Modifier.padding(16.dp)
-                )
-            } else {
-                Text(
-                    text = "No hay páginas cargadas",
-                    color = contentColor
-                )
+                Text(text = uiState.errorMessage ?: "Error", color = contentColor, modifier = Modifier.padding(16.dp))
             }
         }
     }

@@ -10,6 +10,7 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@drawable/libro"
         android:label="@string/app_name"
+        android:largeHeap="true"
         android:roundIcon="@drawable/libro"
         android:supportsRtl="true"
         android:theme="@style/Theme.Lumina">
